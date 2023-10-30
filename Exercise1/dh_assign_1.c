@@ -68,9 +68,7 @@ void dh_algorithm(char *outputFile, unsigned long long p, unsigned long long g, 
     unsigned long long publicA, publicB, secret;
 
     publicA = fmod(pow(g,a), p);
-    printf("%llu", publicA);
     publicB = fmod(pow(g,b), p);
-    printf("%llu", publicB);
 
     secret = fmod(pow(publicA, b), p); // Bob's side 
     // secret = fmod(power(publicB, a), p); // Alice's side
