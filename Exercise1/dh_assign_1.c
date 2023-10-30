@@ -65,7 +65,7 @@ void showArgs(char *outputFile, int p, int g, int a, int b){
 }
 
 void dh_algorithm(char *outputFile, double p, double g, double a, double b){
-    double publicA, publicB;
+    double publicA, publicB, secret;
 
     publicA = fmod(pow(g,a), p);
     publicB = fmod(pow(g,b), p);
