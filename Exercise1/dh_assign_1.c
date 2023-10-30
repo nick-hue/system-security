@@ -4,12 +4,12 @@
 #include <math.h>
 
 void showArgs(char *outputFile, int p, int g, int a, int b);
-void dh_algorithm(char *outputFile, double p, double g, double a, double b);
+void dh_algorithm(char *outputFile, unsigned long long p, unsigned long long g, unsigned long long a, unsigned long long b);
 
 int main(int argc, char *argv[]) {
     int opt;
     char *outputFile = NULL;
-    double p = 0, g = 0, a = 0, b = 0, h = 0;
+    unsigned long long p = 0, g = 0, a = 0, b = 0, h = 0;
 
     while ((opt = getopt(argc, argv, "o:p:g:a:b:h")) != -1) {
         switch (opt) {
@@ -64,11 +64,13 @@ void showArgs(char *outputFile, int p, int g, int a, int b){
     printf("b = %d\n", b);
 }
 
-void dh_algorithm(char *outputFile, double p, double g, double a, double b){
-    double publicA, publicB, secret;
+void dh_algorithm(char *outputFile, unsigned long long p, unsigned long long g, unsigned long long a, unsigned long long b){
+    unsigned long long publicA, publicB, secret;
 
     publicA = fmod(pow(g,a), p);
+    printf("%llu", publicA);
     publicB = fmod(pow(g,b), p);
+    printf("%llu", publicB);
 
     secret = fmod(pow(publicA, b), p); // Bob's side 
     // secret = fmod(power(publicB, a), p); // Alice's side
