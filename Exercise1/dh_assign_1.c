@@ -159,3 +159,5 @@ void dh_algorithm(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b){
     // clearing memory
     mpz_clears(publicA,publicB, secret);
 }
+
+//hello!!!!!!!!!!!
