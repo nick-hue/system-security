@@ -83,7 +83,7 @@ void dh_algorithm(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b){
     mpz_init(publicB);
     mpz_init(secret);
 
-    mpz_powm(publicA, g, b, p);
+    mpz_powm(publicA, g, a, p);
     mpz_powm(publicB, g, b, p);
 
     mpz_powm(secret, publicA, b, p);        // Bob's side 
