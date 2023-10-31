@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
     showArgs(outputFile, p, g, a, b);
     
     // if one of the command line flags are not given correctly, exit the program
-    if (outputFile==NULL || p==0 || g==0 || a==0 || b == 0){
+    if (outputFile==NULL || p==NULL || g==NULL || a==NULL || b==NULL){
         fprintf(stderr, "Error invalid arguments given.\nUse -h flag to show more info about arguments.\n");
         exit(EXIT_FAILURE);
     }
@@ -117,9 +117,9 @@ void dh_algorithm(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b){
     FILE *f = fopen(outputFile, "w");
     
     // making the string lengths for each variable
-    size_t lenA = mpz_sizeinbase(publicA, 10) + 2;  // +2 for null terminator, potential '-' sign
-    size_t lenB = mpz_sizeinbase(publicB, 10) + 2;
-    size_t lenS = mpz_sizeinbase(secret, 10) + 2;
+    size_t lenA = mpz_sizeinbase(publicA, 10) + 1;  // +1 for null terminator
+    size_t lenB = mpz_sizeinbase(publicB, 10) + 1;
+    size_t lenS = mpz_sizeinbase(secret, 10) + 1;
 
     // initializing the buffer for writing into the file
     char fileOutput[lenA+lenB+lenS]; // buffer size for publicA_size + publicB_size + secret

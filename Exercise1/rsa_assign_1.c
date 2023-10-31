@@ -3,11 +3,14 @@
 #include <unistd.h>
 #include <math.h>
 #include <gmp.h>
+#include <time.h>
 
 void showArgs(char *inputFile, char * outputFile, char *keyFile, int keyLength, char * mode);
 void generateRSAKeyPair(int length, int p, int q);
 void writeKeyToFile(char* filename, int key, int keyLength);
 int lambda(int p, int q);
+mpz_t getRandomPrime();
+
 
 int main(int argc, char *argv[]) {
     int opt;
@@ -82,6 +85,13 @@ void writeKeyToFile(char* filename, int key, int keyLength){
     fclose(f);
     printf("Closed file: %s\n", filename);
 }
+
+mpz_t getRandomPrime(){
+    srand(time(NULL));   // Initialization, should only be called once.
+    int r = rand();      // Returns a pseudo-random integer between 0 and RAND_MAX.
+    return;
+}
+
 
 void generateRSAKeyPair(int length, int p, int q){
     int n,e; 
