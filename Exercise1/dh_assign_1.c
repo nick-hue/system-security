@@ -2,31 +2,38 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <math.h>
+#include <gmp.h>
 
-void showArgs(char *outputFile, int p, int g, int a, int b);
-void dh_algorithm(char *outputFile, unsigned long long p, unsigned long long g, unsigned long long a, unsigned long long b);
+void showArgs(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b);
+void dh_algorithm(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b);
 
 int main(int argc, char *argv[]) {
     int opt;
     char *outputFile = NULL;
-    unsigned long long p = 0, g = 0, a = 0, b = 0, h = 0;
+    mpz_t p, g, a, b;
+    int h = 0; 
+    mpz_init(p);
+    mpz_init(g);
+    mpz_init(a);
+    mpz_init(b);
 
+    
     while ((opt = getopt(argc, argv, "o:p:g:a:b:h")) != -1) {
         switch (opt) {
             case 'o':
                 outputFile = optarg; // getopt sets the optarg variable to point to the argument following -o, the string "output.txt".
                 break;
             case 'p':
-                p = atoi(optarg);
+                mpz_set_str(p, optarg, 10);
                 break;
             case 'g':
-                g = atoi(optarg);
+                mpz_set_str(g, optarg, 10);
                 break;
             case 'a':
-                a = atoi(optarg);
+                mpz_set_str(a, optarg, 10);
                 break;
             case 'b':
-                b = atoi(optarg);
+                mpz_set_str(b, optarg, 10);
                 break;
             case 'h':
                 h = 1;
@@ -53,29 +60,57 @@ int main(int argc, char *argv[]) {
     /* writes to the output file the <public key A>, <public key B>, <shared secret> computed from the Diffie-Hellman Algorithm */ 
     dh_algorithm(outputFile, p, g, a, b);
 
+    // clear variables
+    mpz_clear(p);
+    mpz_clear(g);
+    mpz_clear(a);
+    mpz_clear(b);
+
     return 0;
 }
 
-void showArgs(char *outputFile, int p, int g, int a, int b){
+void showArgs(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b) {
     printf("Output File: %s\n", outputFile);
-    printf("p = %d\n", p);
-    printf("g = %d\n", g);
-    printf("a = %d\n", a);
-    printf("b = %d\n", b);
+    gmp_printf("p = %Zd\n", p);
+    gmp_printf("g = %Zd\n", g);
+    gmp_printf("a = %Zd\n", a);
+    gmp_printf("b = %Zd\n", b);
 }
 
-void dh_algorithm(char *outputFile, unsigned long long p, unsigned long long g, unsigned long long a, unsigned long long b){
-    unsigned long long publicA, publicB, secret;
+void dh_algorithm(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b){
+    mpz_t publicA, publicB, secret;
+    mpz_init(publicA);
+    mpz_init(publicB);
+    mpz_init(secret);
 
-    publicA = fmod(pow(g,a), p);
-    publicB = fmod(pow(g,b), p);
+    mpz_powm(publicA, g, b, p);
+    mpz_powm(publicB, g, b, p);
 
-    secret = fmod(pow(publicA, b), p); // Bob's side 
-    // secret = fmod(power(publicB, a), p); // Alice's side
+    mpz_powm(secret, publicA, b, p);        // Bob's side 
+    // mpz_powm(secret, publicB, a, p);     // Alice's side
 
     FILE *f = fopen(outputFile, "w");
-    char fileOutput[40]; // buffer size is 40 because we have a maximum of 10 characters per integer -> 3x10->30 characters and 10 characters for the '<', ',', '>' and '\0'
-    sprintf(fileOutput, "<%d>, <%d>, <%d>", (int)publicA, (int)publicB, (int)secret);
+    
+    size_t lenA = mpz_sizeinbase(publicA, 10) + 2;  // +2 for null terminator, potential '-' sign
+    size_t lenB = mpz_sizeinbase(publicB, 10) + 2;
+    size_t lenS = mpz_sizeinbase(secret, 10) + 2;
+
+    // initializing the buffer for writing into the file
+    char fileOutput[lenA+lenB+lenS]; // buffer size for publicA_size + publicB_size + secret
+
+    // making a string for publicA and putting it's content in 
+    char publicA_str[lenA];
+    mpz_get_str(publicA_str, 10, publicA);
+    
+    // making a string for publicB and putting it's content in 
+    char publicB_str[lenB];
+    mpz_get_str(publicB_str, 10, publicB);
+
+    // making a string for secret and putting it's content in 
+    char secret_str[lenS];
+    mpz_get_str(secret_str, 10, secret);
+
+    sprintf(fileOutput, "<%s>, <%s>, <%s>", publicA_str, publicB_str, secret_str);
     fprintf(f, fileOutput);
     fclose(f);
 }
