@@ -87,7 +87,7 @@ void showArgs(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b) {
 
 int checkSharedSecret(mpz_t p, mpz_t secret){
     // 1 < secret < p-1
-    // mpz_cmp_ui: Compare op1 and op2. Return a positive value if op1 > op2, zero if op1 = op2, or a negative value if op1 < op2.
+    // mpz_cmp: Compare op1 and op2. Return a positive value if op1 > op2, zero if op1 = op2, or a negative value if op1 < op2.
 
     mpz_t p_1;
     mpz_init(p_1);
@@ -108,11 +108,11 @@ void dh_algorithm(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b){
 
     // void mpz_powm (mpz_t rop, const mpz_t base, const mpz_t exp, const mpz_t mod)
     // Set rop to (base raised to exp) modulo mod.
-    mpz_powm(publicA, g, a, p); 
-    mpz_powm(publicB, g, b, p);
+    mpz_powm(publicA, g, a, p);             // publicA = (g^a) mod p 
+    mpz_powm(publicB, g, b, p);             // publicB = (g^b) mod p
 
-    mpz_powm(secret, publicA, b, p);        // Bob's side 
-    // mpz_powm(secret, publicB, a, p);     // Alice's side
+    mpz_powm(secret, publicA, b, p);        // Bob's side   s = (publicA^b) mod p
+    // mpz_powm(secret, publicB, a, p);     // Alice's side s = (publicB^a) mod p
 
     FILE *f = fopen(outputFile, "w");
     
