@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
         printf("-> [-o Path to output file]\n-> [-p Prime number]\n-> [-g Primitive Root for previous prime number]\n-> [-a Private A key]\n-> [-b Private B key]\n");
         return 1;
     }
-        
+
     showArgs(outputFile, p, g, a, b);
     
     /* if one of the command line flags are not given correctly, exit the program */
