@@ -53,6 +53,12 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    // ensure a<p or b<p
+    if ((mpz_cmp(p,a) < 0) || (mpz_cmp(p,b) < 0)){
+        fprintf(stderr, "Arguments [-a], [-b] have to be smaller than argument [-p].\nUse -h flag to show more info about arguments.\n");
+        exit(EXIT_FAILURE);
+    }
+
     // print given arguments to the console
     showArgs(outputFile, p, g, a, b);
     
