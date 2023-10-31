@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <math.h>
-// NIKOLOKOS
+
 void showArgs(char *outputFile, int p, int g, int a, int b);
 void dh_algorithm(char *outputFile, unsigned long long p, unsigned long long g, unsigned long long a, unsigned long long b);
 
