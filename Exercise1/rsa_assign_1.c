@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <math.h>
+#include <gmp.h>
 
 void showArgs(char *inputFile, char * outputFile, char *keyFile, int keyLength, char * mode);
 void generateRSAKeyPair(int length, int p, int q);
