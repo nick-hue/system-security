@@ -110,7 +110,15 @@ void dh_algorithm(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b){
     char secret_str[lenS];
     mpz_get_str(secret_str, 10, secret);
 
+    gmp_printf("\nOUTPUT\npublicA = %s\n", publicA_str);
+    gmp_printf("publicB = %s\n", publicB_str);
+    gmp_printf("secret = %s\n", secret_str);
+
     sprintf(fileOutput, "<%s>, <%s>, <%s>", publicA_str, publicB_str, secret_str);
     fprintf(f, fileOutput);
     fclose(f);
+
+    mpz_clear(publicA);
+    mpz_clear(publicB);
+    mpz_clear(secret);
 }
