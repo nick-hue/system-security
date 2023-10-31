@@ -83,9 +83,15 @@ int checkSharedSecret(mpz_t p, mpz_t secret){
     // 1 < secret < p-1
     // mpz_cmp_ui: Compare op1 and op2. Return a positive value if op1 > op2, zero if op1 = op2, or a negative value if op1 < op2.
 
-    if ((mpz_cmp_ui(secret, 1) > 0) && (mpz_cmp(p, secret) > 0)){
+    mpz_t p_1;
+    mpz_init(p_1);
+    mpz_sub_ui(p_1, p, 1); // Calculate p-1
+
+    if ((mpz_cmp_d(secret, 1) > 0) && (mpz_cmp(p_1, secret) > 0)){
+        mpz_clear(p_1);
         return 0; // true
     } else {
+        mpz_clear(p_1);
         return 1; // false
     }
 }
@@ -129,7 +135,8 @@ void dh_algorithm(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b){
     gmp_printf("\nOUTPUT\npublicA = %s\n", publicA_str);
     gmp_printf("publicB = %s\n", publicB_str);
     gmp_printf("secret = %s\n", secret_str);
-    // checking if error message would workmpz_set_str(secret, "65165465465464", 10);
+    // checking if error message would work
+    mpz_set_str(secret, "65165465465464", 10);
     */ 
 
     // before writing to file check whether shared secret is 1 < secret < p-1 
