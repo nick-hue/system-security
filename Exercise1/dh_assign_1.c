@@ -6,17 +6,14 @@
 
 void showArgs(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b);
 void dh_algorithm(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b);
+int checkSharedSecret(mpz_t p, mpz_t secret);
 
 int main(int argc, char *argv[]) {
     int opt;
     char *outputFile = NULL;
+    int h = 0;
     mpz_t p, g, a, b;
-    int h = 0; 
-    mpz_init(p);
-    mpz_init(g);
-    mpz_init(a);
-    mpz_init(b);
-
+    mpz_inits(p, g, a, b, NULL);
     
     while ((opt = getopt(argc, argv, "o:p:g:a:b:h")) != -1) {
         switch (opt) {
@@ -49,22 +46,27 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    // checks if [-p] argument is prime, if not throw error // mpz_probab_prime_p: returns 2 if definitely prime, 1 if probably prime, 0 if not prime
+    // we put 30 as reps argument, documentation suggests between 15 and 50 (higher the rep, lower the possibility of mistake)
+    if (mpz_probab_prime_p(p, 30) == 0){
+        fprintf(stderr, "Argument [-p] is not prime number.\nUse -h flag to show more info about arguments.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // print given arguments to the console
     showArgs(outputFile, p, g, a, b);
     
-    /* if one of the command line flags are not given correctly, exit the program */
+    // if one of the command line flags are not given correctly, exit the program
     if (outputFile==NULL || p==0 || g==0 || a==0 || b == 0){
         fprintf(stderr, "Error invalid arguments given.\nUse -h flag to show more info about arguments.\n");
         exit(EXIT_FAILURE);
     }
 
-    /* writes to the output file the <public key A>, <public key B>, <shared secret> computed from the Diffie-Hellman Algorithm */ 
+    // writes to the output file the <public key A>, <public key B>, <shared secret> computed from the Diffie-Hellman Algorithm 
     dh_algorithm(outputFile, p, g, a, b);
 
     // clear variables
-    mpz_clear(p);
-    mpz_clear(g);
-    mpz_clear(a);
-    mpz_clear(b);
+    mpz_clears(p,g,a,b);
 
     return 0;
 }
@@ -77,13 +79,24 @@ void showArgs(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b) {
     gmp_printf("b = %Zd\n", b);
 }
 
+int checkSharedSecret(mpz_t p, mpz_t secret){
+    // 1 < secret < p-1
+    // mpz_cmp_ui: Compare op1 and op2. Return a positive value if op1 > op2, zero if op1 = op2, or a negative value if op1 < op2.
+
+    if ((mpz_cmp_ui(secret, 1) > 0) && (mpz_cmp(p, secret) > 0)){
+        return 0; // true
+    } else {
+        return 1; // false
+    }
+}
+
 void dh_algorithm(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b){
     mpz_t publicA, publicB, secret;
-    mpz_init(publicA);
-    mpz_init(publicB);
-    mpz_init(secret);
+    mpz_inits(publicA, publicB, secret, NULL);
 
-    mpz_powm(publicA, g, a, p);
+    // void mpz_powm (mpz_t rop, const mpz_t base, const mpz_t exp, const mpz_t mod)
+    // Set rop to (base raised to exp) modulo mod.
+    mpz_powm(publicA, g, a, p); 
     mpz_powm(publicB, g, b, p);
 
     mpz_powm(secret, publicA, b, p);        // Bob's side 
@@ -91,6 +104,7 @@ void dh_algorithm(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b){
 
     FILE *f = fopen(outputFile, "w");
     
+    // making the string lengths for each variable
     size_t lenA = mpz_sizeinbase(publicA, 10) + 2;  // +2 for null terminator, potential '-' sign
     size_t lenB = mpz_sizeinbase(publicB, 10) + 2;
     size_t lenS = mpz_sizeinbase(secret, 10) + 2;
@@ -110,15 +124,25 @@ void dh_algorithm(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b){
     char secret_str[lenS];
     mpz_get_str(secret_str, 10, secret);
 
+    // test prints
+    /*
     gmp_printf("\nOUTPUT\npublicA = %s\n", publicA_str);
     gmp_printf("publicB = %s\n", publicB_str);
     gmp_printf("secret = %s\n", secret_str);
+    // checking if error message would workmpz_set_str(secret, "65165465465464", 10);
+    */ 
 
+    // before writing to file check whether shared secret is 1 < secret < p-1 
+    if (checkSharedSecret(p, secret) == 1){
+        fprintf(stderr, "Shared secret was not between 1 and p-1.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // writing to file
     sprintf(fileOutput, "<%s>, <%s>, <%s>", publicA_str, publicB_str, secret_str);
     fprintf(f, fileOutput);
     fclose(f);
 
-    mpz_clear(publicA);
-    mpz_clear(publicB);
-    mpz_clear(secret);
+    // clearing memory
+    mpz_clears(publicA,publicB, secret);
 }
