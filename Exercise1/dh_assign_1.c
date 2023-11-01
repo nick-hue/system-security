@@ -7,6 +7,7 @@
 void showArgs(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b);
 void dh_algorithm(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b);
 int checkSharedSecret(mpz_t p, mpz_t secret);
+int isPrimitiveRoot(mpz_t g, mpz_t n);
 
 int main(int argc, char *argv[]) {
     int opt;
@@ -59,6 +60,12 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
 
+    // Checks if g is primitive root of p
+    if(isPrimitiveRoot(g, p) == 1){
+        fprintf(stderr, "Argument [-g] is not the primitive root of argument [-p].\nUse -h flag to show more info about arguments.\n");
+        exit(EXIT_FAILURE);
+    }
+
     // print given arguments to the console
     showArgs(outputFile, p, g, a, b);
     
@@ -72,7 +79,7 @@ int main(int argc, char *argv[]) {
     dh_algorithm(outputFile, p, g, a, b);
 
     // clear variables
-    mpz_clears(p,g,a,b);
+    mpz_clears(p,g,a,b,NULL);
 
     return 0;
 }
@@ -153,11 +160,34 @@ void dh_algorithm(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b){
 
     // writing to file
     sprintf(fileOutput, "<%s>, <%s>, <%s>", publicA_str, publicB_str, secret_str);
-    fprintf(f, fileOutput);
+    fprintf(f,"%s",fileOutput);
     fclose(f);
 
     // clearing memory
-    mpz_clears(publicA,publicB, secret);
+    mpz_clears(secret,publicA,publicB,NULL);
 }
 
-//hello!!!!!!!!!!!
+int isPrimitiveRoot(mpz_t g, mpz_t p){
+    mpz_t phi, residue, i;
+    mpz_inits(phi, residue, i, NULL);
+
+    mpz_sub_ui(phi, p ,1);
+    mpz_set_ui(residue, 1);
+    mpz_set_ui(i, 1);
+ 
+   // gmp_printf("limit=%Zd, phi=%Zd, p=%Zd, i=%Zd\n", limit, phi, p, i);
+    for (i; mpz_cmp(i, phi) < 0; mpz_add_ui(i, i, 1)){
+
+        //gmp_printf("%d\n", mpz_cmp(i, phi));
+        mpz_powm(residue, g, i, p);
+        gmp_printf("res_%Zd = %Zd\n", i, residue);
+
+        if (mpz_cmp_ui(residue, 1) == 0) {
+            mpz_clears(phi, residue, NULL);
+            return 1;  // Not a primitive root
+        }
+
+    }
+    mpz_clears(phi, residue, i, NULL);
+    return 0; // Is a primitive root
+}
