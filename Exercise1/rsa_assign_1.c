@@ -10,12 +10,12 @@ void generateRSAKeyPair(int length);
 void writeKeyToFile(const char* filename, const char* n_str, const char* d_str, const size_t buffer_size);
 void generateRandomPrime(mpz_t result, int num_bits);
 void lambda(mpz_t result, mpz_t p, mpz_t q);
+void makeMeasurements(char *outputFile);
 
 int main(int argc, char *argv[]) {
     int opt;
     char *outputFile = NULL, *inputFile = NULL, *keyFile = NULL, *mode = NULL;
     int keyLength = 0 , h = 0;
-    int sizes[3] = {1024, 2048, 4096};
 
     while ((opt = getopt(argc, argv, "i:o:k:g:a:deh")) != -1) {
         switch (opt) {
@@ -41,6 +41,7 @@ int main(int argc, char *argv[]) {
             case 'a':
                 mode = "compare";
                 outputFile = optarg;
+                makeMeasurements(outputFile);
                 break;
             case 'h':
                 h = 1;
@@ -101,10 +102,10 @@ void generateRSAKeyPair(int length){
 
     mpz_invert(d, e, phi);
 
-    char publicPath[25]; 
+    char publicPath[20]; 
     sprintf(publicPath, "public_%d.key", length);
 
-    char privatePath[25];
+    char privatePath[20];
     sprintf(privatePath, "private_%d.key", length);
 
     size_t lenN = mpz_sizeinbase(n, 2) + 1;
@@ -135,6 +136,11 @@ void writeKeyToFile(const char* filename, const char* str1, const char* str2, co
     char resultString[buffer_size];
     FILE *f = fopen(filename, "w");
 
+    if (f == NULL) {
+        fprintf(stderr, "Error: failed to open file -> %s\n", filename);
+        exit(EXIT_FAILURE);
+    }
+    
     sprintf(resultString, "%s,%s", str1, str2);
     fprintf(f, "%s", resultString);
 
@@ -170,6 +176,40 @@ void generateRandomPrime(mpz_t result, int length){
     // Clear random state
     gmp_randclear(state);  
 }
+
+void makeMeasurements(char *outputFile){
+    int sizes[3] = {1024, 2048, 4096};
+    char measumentsString[1024];
+
+    for (int i = 0; i < 3; i++){
+        printf(" -- Making keys for size: %d\n", sizes[i]);
+        
+        clock_t begin = clock();
+        generateRSAKeyPair(sizes[i]);
+        // ** ENCRYPT AND DECRYPT FILES
+        
+        clock_t end = clock();
+        double time_spent = (double)(end - begin) / CLOCKS_PER_SEC; // dividing by CLOCKS_PER_SEC(1000) to get the time in seconds.
+        char currentString[40];
+        sprintf(currentString, "Measurements for %d: %lf seconds\n", sizes[i], time_spent);
+        strcat(measumentsString, currentString);
+    }
+    // write the measuremebts to file
+    FILE *f = fopen(outputFile, "w");
+
+    // check if file opened correctly
+    if (f == NULL) {
+        fprintf(stderr, "Error: failed to open file -> %s\n", outputFile);
+        exit(EXIT_FAILURE);
+    }    
+    
+    fprintf(f, "%s", measumentsString);
+    printf("Wrote to file: %s\n", outputFile);
+    fclose(f);
+    printf("Closed file:   %s\n", outputFile);
+    
+}
+
 
 void showArgs(char *inputFile, char * outputFile, char *keyFile, int keyLength, char * mode){
     printf("Input File: %s\n", inputFile);
