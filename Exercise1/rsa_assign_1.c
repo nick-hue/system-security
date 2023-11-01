@@ -6,11 +6,10 @@
 #include <time.h>
 
 void showArgs(char *inputFile, char * outputFile, char *keyFile, int keyLength, char * mode);
-void generateRSAKeyPair(int length, int p, int q);
-void writeKeyToFile(char* filename, int key, int keyLength);
-int lambda(int p, int q);
-mpz_t getRandomPrime();
-
+void generateRSAKeyPair(int length);
+void writeKeyToFile(const char* filename, const char* n_str, const char* d_str, const size_t buffer_size);
+void generateRandomPrime(mpz_t result, int num_bits);
+void lambda(mpz_t result, mpz_t p, mpz_t q);
 
 int main(int argc, char *argv[]) {
     int opt;
@@ -31,6 +30,7 @@ int main(int argc, char *argv[]) {
                 break;
             case 'g':
                 keyLength = atoi(optarg);
+                generateRSAKeyPair(keyLength);
                 break;
             case 'd':
                 mode = "decrypt";
@@ -60,54 +60,112 @@ int main(int argc, char *argv[]) {
     
     /* if mode is either encrypt or decrypt and we don't have a input, output, keyFile path produce an error message. */
     if ((mode=="encrypt" || mode=="decrypt") && (inputFile==NULL || outputFile==NULL || keyFile==NULL)){
-        fprintf(stderr, "Error: while in encrypt/decrypt mode you need the [i],[o],[k] arguments.\nUse -h flag to show more info about arguments.\n");
+        fprintf(stderr, "Error: while in encrypt[-e]/decrypt[-d] mode you need the [-i],[-o],[-k] arguments.\nUse -h flag to show more info about arguments.\n");
         exit(EXIT_FAILURE);
     }
 
-    if (mode == "compare"){
-        for (int i=0; i<3;i++){
 
-        }
-    }
-
-
-    generateRSAKeyPair(keyLength, 17, 11);
 
     return 0;
-}
+}  
 
-void writeKeyToFile(char* filename, int key, int keyLength){
-    FILE *f = fopen(filename, "w");
-    char fileOutput[keyLength]; 
-    sprintf(fileOutput, "<%d>", key);
-    fprintf(f, fileOutput);
-    printf("Wrote to file: %s\n", filename);
-    fclose(f);
-    printf("Closed file: %s\n", filename);
-}
+void generateRSAKeyPair(int length){
+    mpz_t p, q, n, e, d, phi, check_e, check_gcd;
+    mpz_inits(p, q, n, e, d, phi, check_e, check_gcd, NULL);
+    generateRandomPrime(p, 1024);
+    generateRandomPrime(q, 1024);
 
-mpz_t getRandomPrime(){
-    srand(time(NULL));   // Initialization, should only be called once.
-    int r = rand();      // Returns a pseudo-random integer between 0 and RAND_MAX.
-    return;
-}
+    gmp_printf("p = %Zd\n", p);
+    gmp_printf("q = %Zd\n", q);
 
+    // check if generated numbers are 
+    if ((mpz_probab_prime_p(p, 30) == 0) || (mpz_probab_prime_p(q, 30) == 0) ){
+        fprintf(stderr, "Generated number [p]/[q] is not prime number.\n");
+        exit(EXIT_FAILURE);
+    }
+    printf("PRIME\n");
 
-void generateRSAKeyPair(int length, int p, int q){
-    int n,e; 
-    n = p*q;
-    
+    mpz_mul(n,p,q);   // n = p * q 
+
+    lambda(phi, p, q); // phi = lambda(n) = (p - 1) * (q - 1)
+    printf("HERE\n");
+
+    //  (e % lambda(n) != 0) AND (gcd(e, lambda) == 1) 
+    do {
+        generateRandomPrime(e, 1024);   // e
+        mpz_mod(check_e, e, phi);       // e % lambda(n)
+        mpz_gcd(check_gcd, e, phi);     // gcd(e, lambda)
+    } while(!(mpz_cmp_d(check_e,0) > 0 && mpz_cmp_d(check_gcd,1)==0));
+    //  int mpz_cmp_d (const mpz_t op1, double op2)
+    // while(check_e == 0 || check_gcd!=1);
+
+    mpz_invert(d, e, phi);
+
     char *publicPath = "public_length.key";
     char *privatePath = "private_length.key";
 
+    size_t lenN = mpz_sizeinbase(n, 2) + 1;
+    size_t lenD = mpz_sizeinbase(d, 2) + 1;
+    size_t lenE = mpz_sizeinbase(e, 2) + 1;
+    
+    char n_str[lenN];
+    mpz_get_str(n_str, 2, n);
+    
+    char d_str[lenD];
+    mpz_get_str(d_str, 2, d);
 
+    char e_str[lenN];
+    mpz_get_str(e_str, 2, e);
 
-    writeKeyToFile(publicPath, 13414234, length);
-    writeKeyToFile(privatePath, 5656565, length);
+    // The public key consists of n and d, in this order.
+    // The private key consists of n and e, in this order
+
+    writeKeyToFile(publicPath, n_str, d_str, lenN+lenD);    // write to public file n, d
+    writeKeyToFile(privatePath, n_str, e_str, lenN+lenE);   // write to private file n, e
+
+    mpz_clears(p, q, n, e, d, phi, check_e, check_gcd, NULL);
+    // IMPORT/EXPORT
+    // size == LENGTH OXI <= LENGTH
 }
 
-int lambda(int p, int q){
-    return (p-1)*(q-1);
+void writeKeyToFile(const char* filename, const char* str1, const char* str2, const size_t buffer_size){
+    char resultString[buffer_size];
+    FILE *f = fopen(filename, "w");
+
+    sprintf(resultString, "%s,%s", str1, str2);
+    fprintf(f, resultString);
+
+    printf("Wrote to file: %s\n", filename);
+    fclose(f);
+    printf("Closed file:   %s\n", filename);
+}
+
+void lambda(mpz_t result, mpz_t p, mpz_t q){
+    mpz_t p_1, q_1;
+    mpz_inits(p_1, q_1, NULL);
+    mpz_sub_ui(p_1, p, 1); // Calculate p-1
+    mpz_sub_ui(q_1, q, 1); // Calculate q-1
+    
+    mpz_mul(result,p,q);   // n = p * q 
+
+    mpz_clears(p_1, q_1, NULL);
+}
+
+void generateRandomPrime(mpz_t result, int length){
+    gmp_randstate_t state;
+
+    // Initialize random state
+    gmp_randinit_default(state);
+    gmp_randseed_ui(state, time(NULL)); // Seed with current time
+
+    do {
+        mpz_urandomb(result, state, length/2);                  // Generate a random number with length bits
+        mpz_nextprime(result, result);                          // Get the next prime after the random number we chose
+    } while (mpz_sizeinbase(result, 2) > length/2);             // Ensure it doesn't exceed the specified number of bits
+
+
+    // Clear random state
+    gmp_randclear(state);  
 }
 
 void showArgs(char *inputFile, char * outputFile, char *keyFile, int keyLength, char * mode){

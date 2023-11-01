@@ -152,6 +152,7 @@ void dh_algorithm(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b){
     // writing to file
     sprintf(fileOutput, "<%s>, <%s>, <%s>", publicA_str, publicB_str, secret_str);
     fprintf(f,"%s",fileOutput);
+    fprintf(f, "%s", fileOutput);
     fclose(f);
 
     // clearing memory
