@@ -124,6 +124,8 @@ void generateRSAKeyPair(int length){
     writeKeyToFile(privatePath, n_str, e_str, lenN+lenE);   // write to private file n, e
 
     mpz_clears(p, q, n, e, d, phi, check_e, check_gcd, NULL);
+    // IMPORT/EXPORT
+    // size == LENGTH OXI <= LENGTH
 }
 
 void writeKeyToFile(const char* filename, const char* str1, const char* str2, const size_t buffer_size){
