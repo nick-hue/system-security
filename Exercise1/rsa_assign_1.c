@@ -101,8 +101,11 @@ void generateRSAKeyPair(int length){
 
     mpz_invert(d, e, phi);
 
-    char *publicPath = "public_length.key";
-    char *privatePath = "private_length.key";
+    char publicPath[25]; 
+    sprintf(publicPath, "public_%d.key", length);
+
+    char privatePath[25];
+    sprintf(privatePath, "private_%d.key", length);
 
     size_t lenN = mpz_sizeinbase(n, 2) + 1;
     size_t lenD = mpz_sizeinbase(d, 2) + 1;
@@ -133,7 +136,7 @@ void writeKeyToFile(const char* filename, const char* str1, const char* str2, co
     FILE *f = fopen(filename, "w");
 
     sprintf(resultString, "%s,%s", str1, str2);
-    fprintf(f, resultString);
+    fprintf(f, "%s", resultString);
 
     printf("Wrote to file: %s\n", filename);
     fclose(f);
