@@ -88,15 +88,15 @@ void generateRSAKeyPair(int length){
     mpz_mul(n,p,q);   // n = p * q 
 
     lambda(phi, p, q); // phi = lambda(n) = (p - 1) * (q - 1)
+    printf("HERE\n");
 
     //  (e % lambda(n) != 0) AND (gcd(e, lambda) == 1) 
     do {
         generateRandomPrime(e, 1024);   // e
         mpz_mod(check_e, e, phi);       // e % lambda(n)
         mpz_gcd(check_gcd, e, phi);     // gcd(e, lambda)
-        gmp_printf("p = %Zd\n", p);
-
-    } while(!(check_e != 0 && check_gcd==1));
+    } while(!(mpz_cmp_d(check_e,0) > 0 && mpz_cmp_d(check_gcd,1)==0));
+    //  int mpz_cmp_d (const mpz_t op1, double op2)
     // while(check_e == 0 || check_gcd!=1);
 
     mpz_invert(d, e, phi);
@@ -104,19 +104,18 @@ void generateRSAKeyPair(int length){
     char *publicPath = "public_length.key";
     char *privatePath = "private_length.key";
 
-    size_t lenN = mpz_sizeinbase(n, 10) + 1;
-    size_t lenD = mpz_sizeinbase(d, 10) + 1;
-    size_t lenE = mpz_sizeinbase(e, 10) + 1;
+    size_t lenN = mpz_sizeinbase(n, 2) + 1;
+    size_t lenD = mpz_sizeinbase(d, 2) + 1;
+    size_t lenE = mpz_sizeinbase(e, 2) + 1;
     
     char n_str[lenN];
-    mpz_get_str(n_str, 10, n);
+    mpz_get_str(n_str, 2, n);
     
     char d_str[lenD];
-    mpz_get_str(d_str, 10, d);
+    mpz_get_str(d_str, 2, d);
 
     char e_str[lenN];
-    mpz_get_str(e_str, 10, e);
-    // ALLAKSA TA 10RIA SE 2
+    mpz_get_str(e_str, 2, e);
 
     // The public key consists of n and d, in this order.
     // The private key consists of n and e, in this order
@@ -141,13 +140,13 @@ void writeKeyToFile(const char* filename, const char* str1, const char* str2, co
 
 void lambda(mpz_t result, mpz_t p, mpz_t q){
     mpz_t p_1, q_1;
-    mpz_inits(p_1, q_1);
+    mpz_inits(p_1, q_1, NULL);
     mpz_sub_ui(p_1, p, 1); // Calculate p-1
     mpz_sub_ui(q_1, q, 1); // Calculate q-1
     
     mpz_mul(result,p,q);   // n = p * q 
 
-    mpz_clears(p_1, q_1);
+    mpz_clears(p_1, q_1, NULL);
 }
 
 void generateRandomPrime(mpz_t result, int length){
@@ -160,7 +159,7 @@ void generateRandomPrime(mpz_t result, int length){
     do {
         mpz_urandomb(result, state, length/2);                  // Generate a random number with length bits
         mpz_nextprime(result, result);                          // Get the next prime after the random number we chose
-    } while (mpz_sizeinbase(result, 10) > length/2);             // Ensure it doesn't exceed the specified number of bits
+    } while (mpz_sizeinbase(result, 2) > length/2);             // Ensure it doesn't exceed the specified number of bits
 
 
     // Clear random state
