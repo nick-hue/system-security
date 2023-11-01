@@ -123,7 +123,7 @@ void generateRSAKeyPair(int length){
     writeKeyToFile(publicPath, n_str, d_str, lenN+lenD);    // write to public file n, d
     writeKeyToFile(privatePath, n_str, e_str, lenN+lenE);   // write to private file n, e
 
-    mpz_clears(p, q, n, e, d, phi, check_e, check_gcd);
+    mpz_clears(p, q, n, e, d, phi, check_e, check_gcd, NULL);
 }
 
 void writeKeyToFile(const char* filename, const char* str1, const char* str2, const size_t buffer_size){
