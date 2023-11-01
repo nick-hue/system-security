@@ -143,15 +143,6 @@ void dh_algorithm(char *outputFile, mpz_t p, mpz_t g, mpz_t a, mpz_t b){
     char secret_str[lenS];
     mpz_get_str(secret_str, 10, secret);
 
-    // test prints
-    /*
-    gmp_printf("\nOUTPUT\npublicA = %s\n", publicA_str);
-    gmp_printf("publicB = %s\n", publicB_str);
-    gmp_printf("secret = %s\n", secret_str);
-    // checking if error message would work
-    mpz_set_str(secret, "65165465465464", 10);
-    */ 
-
     // before writing to file check whether shared secret is 1 < secret < p-1 
     if (checkSharedSecret(p, secret) == 1){
         fprintf(stderr, "Shared secret was not between 1 and p-1.\n");
@@ -175,10 +166,8 @@ int isPrimitiveRoot(mpz_t g, mpz_t p){
     mpz_set_ui(residue, 1);
     mpz_set_ui(i, 1);
  
-   // gmp_printf("limit=%Zd, phi=%Zd, p=%Zd, i=%Zd\n", limit, phi, p, i);
     for (i; mpz_cmp(i, phi) < 0; mpz_add_ui(i, i, 1)){
 
-        //gmp_printf("%d\n", mpz_cmp(i, phi));
         mpz_powm(residue, g, i, p);
         gmp_printf("res_%Zd = %Zd\n", i, residue);
 
