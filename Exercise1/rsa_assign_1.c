@@ -13,7 +13,9 @@ void lambda(mpz_t result, mpz_t p, mpz_t q);
 void makeMeasurements(char *outputFile);
 void encryptFile(char *inputFile, char *outputFile, char * keyFile);
 void readKeysFromFile(const char *filename, mpz_t first, mpz_t second);
+void encode(mpz_t result, mpz_t m, mpz_t n);
 size_t getSizeOfFile(FILE *file);
+unsigned char* getRandomNonZeroBytes(size_t length);
 
 int main(int argc, char *argv[]) {
     int opt;
@@ -213,39 +215,105 @@ void makeMeasurements(char *outputFile){
 
 void encryptFile(char *inputFile, char *outputFile, char *keyFile){
 
-    mpz_t currentChar, cypher, n, e;
-    mpz_inits(currentChar, cypher, n, e, NULL);
-
+    mpz_t n, e;
+    mpz_inits(n, e, NULL);
+    
     FILE *fin = fopen(inputFile, "r");
-    char ch;
+    FILE *fout = fopen(outputFile, "w");
 
     // check if file opened correctly
-    if (fin == NULL) {
+    if (fin == NULL || fout == NULL) {
         fprintf(stderr, "Error: failed to open file -> %s\n", inputFile);
         exit(EXIT_FAILURE);
     }
-
-    size_t cipherSize = getSizeOfFile(fin);
-    char *cipherString[cipherSize];
-
     readKeysFromFile(keyFile, n, e);
-    
-    // getting each character of input file and applying rsa encryption
+    gmp_printf("The n: %Zd\n", n);
+    gmp_printf("The e: %Zd\n", e);
+
+    char ch;
+    mpz_t currentBlock, cypher, encodedBlock;
+    mpz_inits(currentBlock, cypher, encodedBlock, n, e, NULL);      
     do {
         ch = fgetc(fin);
         printf("%c = %d\n", ch, (int)ch);
-        mpz_set_si(currentChar, (int)ch); // Set the mpz_t to the integer value
-        gmp_printf("MPZ INT: %Zd\n", currentChar); 
-        mpz_powm(cypher,currentChar,e,n);
+        mpz_set_si(currentBlock, (int)ch); // Set the mpz_t to the integer value
+        gmp_printf("MPZ INT: %Zd\n", currentBlock); 
+        encode(encodedBlock, currentBlock, n); // adds the padding to the current block 
+        mpz_powm(cypher,encodedBlock,e,n);
         gmp_printf("CIPHER: %Zd\n", cypher); 
 
     } while (ch != EOF);
 
-    
+  
     
     // closing input file
     fclose(fin);
-    mpz_clears(currentChar, cypher, NULL);
+    mpz_clears(currentBlock, cypher, encodedBlock, n, e, NULL);
+}
+
+void encode(mpz_t result, mpz_t m, mpz_t n){
+    size_t kLen = 0; 
+    void *p = mpz_export(NULL, &kLen, 1, sizeof(char), 0, 0, n);
+    unsigned char *n_bytes = malloc(kLen);  
+    memcpy(n_bytes, p, kLen);               
+    free(p);                                
+
+    printf("kLen = %d\nBytes: ", kLen);
+    for (int i = 0; i<kLen; i++){
+        printf("%02X ", n_bytes[i]);
+    }
+
+    size_t dLen = 0; 
+    p = mpz_export(NULL, &dLen, 1, sizeof(char), 0, 0, m);
+    unsigned char *message_bytes = malloc(dLen);  
+    memcpy(message_bytes, p, dLen);             
+    free(p);
+
+    printf("dLen = %d\nBytes: ", dLen);
+    for (int i = 0; i<dLen; i++){
+        printf("%02X", message_bytes[i]);
+    }
+
+    if (dLen <= kLen-11){
+        fprintf(stderr, "Not Right size for padding.");
+        exit(EXIT_FAILURE);
+    }
+    size_t rLen = (kLen - dLen - 3);
+
+    unsigned char *randBytes = getRandomNonZeroBytes(rLen);
+
+    size_t resultLen = rLen + dLen + 3; // 3 + 1?
+    unsigned char *resultBytes = malloc(resultLen);;
+    resultBytes[0] = 0x00;
+    resultBytes[1] = 0x02;
+    memcpy(resultBytes + 2, randBytes, rLen);
+    resultBytes[rLen+2] = 0x00;
+    memcpy(resultBytes + rLen + 3, message_bytes, dLen);
+
+    mpz_import(result,resultLen,1,sizeof(resultBytes[0]),0,0,resultBytes);
+    free(n_bytes);
+    free(message_bytes);
+    free(randBytes);
+    free(resultBytes);
+}
+
+unsigned char* getRandomNonZeroBytes(size_t length){
+    unsigned char* bytes = malloc(length);
+    if (bytes == NULL) {
+        fprintf(stderr, "Failed memory allocation.");
+        exit(EXIT_FAILURE);
+    }
+
+    // Seed the random number generator
+    srand(time(NULL));
+
+    for (size_t i = 0; i < length; ++i) {
+        do {
+            bytes[i] = (unsigned char)(rand() % 256);
+        } while (bytes[i] == 0); // Ensure the byte is not zero
+    }
+
+    return bytes;
 }
 
 void readKeysFromFile(const char *filename, mpz_t first, mpz_t second){
