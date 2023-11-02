@@ -11,6 +11,9 @@ void writeKeyToFile(const char* filename, const char* n_str, const char* d_str, 
 void generateRandomPrime(mpz_t result, int num_bits);
 void lambda(mpz_t result, mpz_t p, mpz_t q);
 void makeMeasurements(char *outputFile);
+void encryptFile(char *inputFile, char *outputFile, char * keyFile);
+void readKeysFromFile(const char *filename, mpz_t first, mpz_t second);
+size_t getSizeOfFile(FILE *file);
 
 int main(int argc, char *argv[]) {
     int opt;
@@ -64,8 +67,7 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Error: while in encrypt[-e]/decrypt[-d] mode you need the [-i],[-o],[-k] arguments.\nUse -h flag to show more info about arguments.\n");
         exit(EXIT_FAILURE);
     }
-
-
+    encryptFile(inputFile, outputFile, keyFile);
 
     return 0;
 }  
@@ -73,8 +75,9 @@ int main(int argc, char *argv[]) {
 void generateRSAKeyPair(int length){
     mpz_t p, q, n, e, d, phi, check_e, check_gcd;
     mpz_inits(p, q, n, e, d, phi, check_e, check_gcd, NULL);
-    generateRandomPrime(p, 1024);
-    generateRandomPrime(q, 1024);
+
+    generateRandomPrime(p, length);
+    generateRandomPrime(q, length);
 
     gmp_printf("p = %Zd\n", p);
     gmp_printf("q = %Zd\n", q);
@@ -128,8 +131,6 @@ void generateRSAKeyPair(int length){
     writeKeyToFile(privatePath, n_str, e_str, lenN+lenE);   // write to private file n, e
 
     mpz_clears(p, q, n, e, d, phi, check_e, check_gcd, NULL);
-    // IMPORT/EXPORT
-    // size == LENGTH OXI <= LENGTH
 }
 
 void writeKeyToFile(const char* filename, const char* str1, const char* str2, const size_t buffer_size){
@@ -210,6 +211,78 @@ void makeMeasurements(char *outputFile){
     
 }
 
+void encryptFile(char *inputFile, char *outputFile, char *keyFile){
+
+    mpz_t currentChar, cypher, n, e;
+    mpz_inits(currentChar, cypher, n, e, NULL);
+
+    FILE *fin = fopen(inputFile, "r");
+    char ch;
+
+    // check if file opened correctly
+    if (fin == NULL) {
+        fprintf(stderr, "Error: failed to open file -> %s\n", inputFile);
+        exit(EXIT_FAILURE);
+    }
+
+    size_t cipherSize = getSizeOfFile(fin);
+    char *cipherString[cipherSize];
+
+    readKeysFromFile(keyFile, n, e);
+    
+    // getting each character of input file and applying rsa encryption
+    do {
+        ch = fgetc(fin);
+        printf("%c = %d\n", ch, (int)ch);
+        mpz_set_si(currentChar, (int)ch); // Set the mpz_t to the integer value
+        gmp_printf("MPZ INT: %Zd\n", currentChar); 
+        mpz_powm(cypher,currentChar,e,n);
+        gmp_printf("CIPHER: %Zd\n", cypher); 
+
+    } while (ch != EOF);
+
+    
+    
+    // closing input file
+    fclose(fin);
+    mpz_clears(currentChar, cypher, NULL);
+}
+
+void readKeysFromFile(const char *filename, mpz_t first, mpz_t second){
+    FILE *file = fopen(filename, "r");
+    if (file == NULL) {
+        perror("Unable to open the file");
+        exit(EXIT_FAILURE);
+    }
+
+    // Size of the buffer is length/8  //// CHANGES
+    char buffer[1024];
+
+    // fill the buffer with the file componenets
+    if (fgets(buffer, sizeof(buffer), file) == NULL) {
+        printf("Failed to read the line from the file\n");
+        fclose(file);
+        exit(EXIT_FAILURE);
+    }
+
+    // parse the keys from the buffer, show to the gmp_sscanf that the format is "n,e"
+    if (gmp_sscanf(buffer, "%Zd,%Zd", first, second) != 2) {
+        printf("Failed to parse two mpz_t numbers from the line\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // close the key file
+    fclose(file);
+
+}
+
+size_t getSizeOfFile(FILE *file){ // file has to be already opened 
+    fseek(file, 0, SEEK_END);
+    size_t size = ftell(file);
+    rewind(file);
+    return size;
+}
+    
 
 void showArgs(char *inputFile, char * outputFile, char *keyFile, int keyLength, char * mode){
     printf("Input File: %s\n", inputFile);
