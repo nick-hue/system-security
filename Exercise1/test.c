@@ -2,17 +2,22 @@
 #include <gmp.h>
 
 int main() {
-    mpz_t largeInt;                  // Declare a GMP integer
-    mpz_t reps;
-    mpz_init(reps);
-    mpz_init(largeInt);              // Initialize the integer
-    mpz_set_str(reps, "10050", 10);
+    mpz_t p,q,e,n,d,m,c,result;                  // Declare a GMP integer
+    mpz_inits(p,q,e,n,d,m,c,result, NULL);
     
-    // mpz_set_str(largeInt, "123456789012345678901234567890", 10); // Set the integer value using a string
+    mpz_set_str(m, "42", 10);
+    mpz_set_str(p, "61", 10);
+    mpz_set_str(q, "53", 10);
+    mpz_set_str(e, "17", 10);
+    mpz_set_str(n, "3233", 10);
+    mpz_set_str(d, "2753", 10);
+    
+    gmp_printf("Plain text: %Zd\n", m); 
+    mpz_powm(c,m,e,n);
+    gmp_printf("Encrypted: %Zd\n", c); 
+    mpz_powm(result,c,d,n);
+    gmp_printf("Decrypted: %Zd\n", result); 
 
-    mpz_nextprime(largeInt, reps); 
-    gmp_printf("Value: %Zd\n", largeInt); // Print the integer
-
-    mpz_clear(largeInt);             // Clear the allocated memory for the integer
+    mpz_clears(p,q,e,n,d,m,c,result, NULL);
     return 0;
 }

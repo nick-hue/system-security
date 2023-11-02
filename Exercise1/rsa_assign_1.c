@@ -21,6 +21,8 @@ int main(int argc, char *argv[]) {
     int opt;
     char *outputFile = NULL, *inputFile = NULL, *keyFile = NULL, *mode = NULL;
     int keyLength = 0 , h = 0;
+    // Seed the random number generator
+    srand(time(NULL));
 
     while ((opt = getopt(argc, argv, "i:o:k:g:a:deh")) != -1) {
         switch (opt) {
@@ -215,8 +217,8 @@ void makeMeasurements(char *outputFile){
 
 void encryptFile(char *inputFile, char *outputFile, char *keyFile){
 
-    mpz_t n, e;
-    mpz_inits(n, e, NULL);
+    mpz_t n, e, currentBlock, cypher, encodedBlock;
+    mpz_inits(n, e,currentBlock, cypher, encodedBlock, NULL);
     
     FILE *fin = fopen(inputFile, "r");
     FILE *fout = fopen(outputFile, "w");
@@ -231,8 +233,7 @@ void encryptFile(char *inputFile, char *outputFile, char *keyFile){
     gmp_printf("The e: %Zd\n", e);
 
     char ch;
-    mpz_t currentBlock, cypher, encodedBlock;
-    mpz_inits(currentBlock, cypher, encodedBlock, n, e, NULL);      
+    char resultString[2048];
     do {
         ch = fgetc(fin);
         printf("%c = %d\n", ch, (int)ch);
@@ -240,18 +241,28 @@ void encryptFile(char *inputFile, char *outputFile, char *keyFile){
         gmp_printf("MPZ INT: %Zd\n", currentBlock); 
         encode(encodedBlock, currentBlock, n); // adds the padding to the current block 
         mpz_powm(cypher,encodedBlock,e,n);
-        gmp_printf("CIPHER: %Zd\n", cypher); 
+        gmp_printf("CIPHER: %Zd\n", cypher);
+        
+        size_t cypher_strLen = mpz_sizeinbase(cypher, 10) + 2;
+        char * cypherString = malloc(cypher_strLen);
+        mpz_get_str(cypherString, 10, cypher); 
+        
+        strcat(resultString, cypherString);
 
+        free(cypherString);
+        printf("--------------\n");
     } while (ch != EOF);
 
-  
     
+    fprintf(fout, "%s", resultString);
+
     // closing input file
     fclose(fin);
+    fclose(fout);
     mpz_clears(currentBlock, cypher, encodedBlock, n, e, NULL);
 }
 
-void encode(mpz_t result, mpz_t m, mpz_t n){
+void encode(mpz_t result, mpz_t message, mpz_t n){
     size_t kLen = 0; 
     void *p = mpz_export(NULL, &kLen, 1, sizeof(char), 0, 0, n);
     unsigned char *n_bytes = malloc(kLen);  
@@ -264,17 +275,17 @@ void encode(mpz_t result, mpz_t m, mpz_t n){
     }
 
     size_t dLen = 0; 
-    p = mpz_export(NULL, &dLen, 1, sizeof(char), 0, 0, m);
+    p = mpz_export(NULL, &dLen, 1, sizeof(char), 0, 0, message);
     unsigned char *message_bytes = malloc(dLen);  
     memcpy(message_bytes, p, dLen);             
     free(p);
 
-    printf("dLen = %d\nBytes: ", dLen);
+    printf("\ndLen = %d\nBytes: ", dLen);
     for (int i = 0; i<dLen; i++){
         printf("%02X", message_bytes[i]);
     }
-
-    if (dLen <= kLen-11){
+    printf("\n");
+    if (dLen > kLen-11){ // migth be dLen < kLen-11
         fprintf(stderr, "Not Right size for padding.");
         exit(EXIT_FAILURE);
     }
@@ -300,18 +311,20 @@ void encode(mpz_t result, mpz_t m, mpz_t n){
 unsigned char* getRandomNonZeroBytes(size_t length){
     unsigned char* bytes = malloc(length);
     if (bytes == NULL) {
-        fprintf(stderr, "Failed memory allocation.");
+        fprintf(stderr, "Failed memory allocation.HERE");
         exit(EXIT_FAILURE);
     }
-
-    // Seed the random number generator
-    srand(time(NULL));
 
     for (size_t i = 0; i < length; ++i) {
         do {
             bytes[i] = (unsigned char)(rand() % 256);
         } while (bytes[i] == 0); // Ensure the byte is not zero
     }
+    printf("RANDOM BYTES::::::");
+    for (size_t i = 0; i < length; ++i) {
+        printf("%02X ", bytes[i]);
+    }
+    printf("\n");
 
     return bytes;
 }
