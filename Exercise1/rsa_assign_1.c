@@ -12,15 +12,32 @@ void generateRandomPrime(mpz_t result, int num_bits);
 void lambda(mpz_t result, mpz_t p, mpz_t q);
 void makeMeasurements(char *outputFile);
 void encryptFile(char *inputFile, char *outputFile, char * keyFile);
-void readKeysFromFile(const char *filename, mpz_t first, mpz_t second);
+void decryptFile(char *inputFile, char *outputFile, char * keyFile);
 void encode(mpz_t result, unsigned char *message, size_t messageLen, mpz_t n);
+void decode();
+void readKeysFromFile(const char *filename, mpz_t first, mpz_t second);
 size_t getSizeOfFile(FILE *file);
 unsigned char* getRandomNonZeroBytes(size_t length);
 
+typedef enum {
+    ENCRYPT,
+    DECRYPT,
+    COMPARE,
+    MODE_UNKNOWN
+} Mode;
+
+Mode getMode(const char *modeString) {
+    if (strcmp(modeString, "encrypt") == 0) return ENCRYPT;
+    if (strcmp(modeString, "decrypt") == 0) return DECRYPT;
+    if (strcmp(modeString, "compare") == 0) return COMPARE;
+    return MODE_UNKNOWN;
+}
+
 int main(int argc, char *argv[]) {
     int opt;
-    char *outputFile = NULL, *inputFile = NULL, *keyFile = NULL, *mode = NULL;
+    char *outputFile = NULL, *inputFile = NULL, *keyFile = NULL, *currentMode = NULL;
     int keyLength = 0 , h = 0;
+    Mode mode;
     // Seed the random number generator
     srand(time(NULL));
 
@@ -40,13 +57,16 @@ int main(int argc, char *argv[]) {
                 generateRSAKeyPair(keyLength);
                 break;
             case 'd':
-                mode = "decrypt";
+                currentMode = "decrypt";
+                mode = getMode(currentMode);
                 break;
             case 'e':
-                mode = "encrypt";
+                currentMode = "encrypt";
+                mode = getMode(currentMode);
                 break;
             case 'a':
-                mode = "compare";
+                currentMode = "compare";
+                mode = getMode(currentMode);
                 outputFile = optarg;
                 makeMeasurements(outputFile);
                 break;
@@ -71,7 +91,23 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Error: while in encrypt[-e]/decrypt[-d] mode you need the [-i],[-o],[-k] arguments.\nUse -h flag to show more info about arguments.\n");
         exit(EXIT_FAILURE);
     }
-    encryptFile(inputFile, outputFile, keyFile);
+
+    switch(mode){
+        case ENCRYPT:
+            encryptFile(inputFile, outputFile, keyFile);
+            break;
+        case DECRYPT:
+            decryptFile(inputFile, outputFile, keyFile);
+            break;
+        case COMPARE:
+            makeMeasurements(outputFile);
+            break;
+        default:
+            printf("UNKNOWN MODE\n");
+            fprintf(stderr, "Error: while getting mode.\nUse -h flag to show more info about arguments.\n");
+            exit(EXIT_FAILURE);
+
+    }
 
     return 0;
 }  
@@ -258,12 +294,10 @@ void encryptFile(char *inputFile, char *outputFile, char *keyFile){
     fprintf(fout, "%s", cypher);
     gmp_fprintf(fout, "%Zd",cypher);
     printf("--------------\n");
-    //free(cypherString);
 
     // closing input file
     fclose(fin);
     fclose(fout);
-    //free(resultString);
     mpz_clears(currentBlock, cypher, encodedBlock, n, e, NULL);
 }
 
@@ -339,6 +373,10 @@ unsigned char* getRandomNonZeroBytes(size_t length){
     */
 
     return bytes;
+}
+
+void decryptFile(char *inputFile, char *outputFile, char * keyFile){
+
 }
 
 void readKeysFromFile(const char *filename, mpz_t first, mpz_t second){
