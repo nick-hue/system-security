@@ -13,7 +13,7 @@ void lambda(mpz_t result, mpz_t p, mpz_t q);
 void makeMeasurements(char *outputFile);
 void encryptFile(char *inputFile, char *outputFile, char * keyFile);
 void readKeysFromFile(const char *filename, mpz_t first, mpz_t second);
-void encode(mpz_t result, mpz_t m, mpz_t n);
+void encode(mpz_t result, unsigned char *message, size_t messageLen, mpz_t n);
 size_t getSizeOfFile(FILE *file);
 unsigned char* getRandomNonZeroBytes(size_t length);
 
@@ -226,6 +226,7 @@ void encryptFile(char *inputFile, char *outputFile, char *keyFile){
     // check if file opened correctly
     if (fin == NULL || fout == NULL) {
         fprintf(stderr, "Error: failed to open file -> %s\n", inputFile);
+        mpz_clears(n, e,currentBlock, cypher, encodedBlock, NULL);
         exit(EXIT_FAILURE);
     }
     readKeysFromFile(keyFile, n, e);
@@ -233,36 +234,40 @@ void encryptFile(char *inputFile, char *outputFile, char *keyFile){
     gmp_printf("The e: %Zd\n", e);
 
     char ch;
-    char resultString[2048];
-    do {
-        ch = fgetc(fin);
-        printf("%c = %d\n", ch, (int)ch);
-        mpz_set_si(currentBlock, (int)ch); // Set the mpz_t to the integer value
-        gmp_printf("MPZ INT: %Zd\n", currentBlock); 
-        encode(encodedBlock, currentBlock, n); // adds the padding to the current block 
-        mpz_powm(cypher,encodedBlock,e,n);
-        gmp_printf("CIPHER: %Zd\n", cypher);
-        
-        size_t cypher_strLen = mpz_sizeinbase(cypher, 10) + 2;
-        char * cypherString = malloc(cypher_strLen);
-        mpz_get_str(cypherString, 10, cypher); 
-        
-        strcat(resultString, cypherString);
-
-        free(cypherString);
-        printf("--------------\n");
-    } while (ch != EOF);
-
     
-    fprintf(fout, "%s", resultString);
+    size_t fileSize = getSizeOfFile(fin);
+    char *message = malloc(fileSize + 1);
+    if (message == NULL) {
+        fprintf(stderr, "Memory allocation failed.\n");
+        mpz_clears(n, e,currentBlock, cypher, encodedBlock, NULL);
+        fclose(fin);
+        fclose(fout);
+        exit(EXIT_FAILURE);
+    }
+
+    size_t bytesRead = fread(message, 1, fileSize, fin);    // reading the contents of the file
+    printf("%s", message);
+    
+    unsigned char* message_bytes = (unsigned char*)message; // transforming the file input into bytes
+
+    encode(encodedBlock, message_bytes, bytesRead, n); // adds the padding to the current block 
+    gmp_printf("ENCODED: %Zd\n", encodedBlock);
+    mpz_powm(cypher,encodedBlock,e,n);
+    gmp_printf("CIPHER: %Zd\n", cypher);
+    
+    fprintf(fout, "%s", cypher);
+    gmp_fprintf(fout, "%Zd",cypher);
+    printf("--------------\n");
+    //free(cypherString);
 
     // closing input file
     fclose(fin);
     fclose(fout);
+    //free(resultString);
     mpz_clears(currentBlock, cypher, encodedBlock, n, e, NULL);
 }
 
-void encode(mpz_t result, mpz_t message, mpz_t n){
+void encode(mpz_t result, unsigned char *message, size_t dLen, mpz_t n){
     size_t kLen = 0; 
     void *p = mpz_export(NULL, &kLen, 1, sizeof(char), 0, 0, n);
     unsigned char *n_bytes = malloc(kLen);  
@@ -274,15 +279,9 @@ void encode(mpz_t result, mpz_t message, mpz_t n){
         printf("%02X ", n_bytes[i]);
     }
 
-    size_t dLen = 0; 
-    p = mpz_export(NULL, &dLen, 1, sizeof(char), 0, 0, message);
-    unsigned char *message_bytes = malloc(dLen);  
-    memcpy(message_bytes, p, dLen);             
-    free(p);
-
     printf("\ndLen = %d\nBytes: ", dLen);
     for (int i = 0; i<dLen; i++){
-        printf("%02X", message_bytes[i]);
+        printf("%02X ", message[i]);
     }
     printf("\n");
     if (dLen > kLen-11){ // migth be dLen < kLen-11
@@ -292,18 +291,30 @@ void encode(mpz_t result, mpz_t message, mpz_t n){
     size_t rLen = (kLen - dLen - 3);
 
     unsigned char *randBytes = getRandomNonZeroBytes(rLen);
+    printf("Random Bytes: ");
+    for (int i =0; i < rLen; i++){
+        printf("%02X ", randBytes[i]);
+    }
+    printf("\n");
 
-    size_t resultLen = rLen + dLen + 3; // 3 + 1?
+    size_t resultLen = rLen + dLen + 3;
     unsigned char *resultBytes = malloc(resultLen);;
     resultBytes[0] = 0x00;
     resultBytes[1] = 0x02;
     memcpy(resultBytes + 2, randBytes, rLen);
     resultBytes[rLen+2] = 0x00;
-    memcpy(resultBytes + rLen + 3, message_bytes, dLen);
+    memcpy(resultBytes + rLen + 3, message, dLen);
+
+    printf("Result Bytes: %d :", resultLen);
+    for (int i =0; i < resultLen; i++){
+        printf("%02X ", resultBytes[i]);
+    }
+    printf("\n");
 
     mpz_import(result,resultLen,1,sizeof(resultBytes[0]),0,0,resultBytes);
+    gmp_printf("M^=>>>>> %Zd\n", result);
+
     free(n_bytes);
-    free(message_bytes);
     free(randBytes);
     free(resultBytes);
 }
@@ -320,11 +331,12 @@ unsigned char* getRandomNonZeroBytes(size_t length){
             bytes[i] = (unsigned char)(rand() % 256);
         } while (bytes[i] == 0); // Ensure the byte is not zero
     }
-    printf("RANDOM BYTES::::::");
+    /*printf("RANDOM BYTES::::::");
     for (size_t i = 0; i < length; ++i) {
         printf("%02X ", bytes[i]);
     }
     printf("\n");
+    */
 
     return bytes;
 }
