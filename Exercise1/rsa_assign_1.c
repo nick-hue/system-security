@@ -5,16 +5,16 @@
 #include <gmp.h>
 #include <time.h>
 
-void showArgs(char *inputFile, char * outputFile, char *keyFile, int keyLength, char * mode);
+void showArgs(char *inputFile, char * outputFile, char *keyFile, int keyLength, char * currentMode);
 void generateRSAKeyPair(int length);
-void writeKeyToFile(const char* filename, const char* n_str, const char* d_str, const size_t buffer_size);
+void writeKeyToFile(const char* filename, mpz_t first, mpz_t second);
 void generateRandomPrime(mpz_t result, int num_bits);
 void lambda(mpz_t result, mpz_t p, mpz_t q);
 void makeMeasurements(char *outputFile);
 void encryptFile(char *inputFile, char *outputFile, char * keyFile);
 void decryptFile(char *inputFile, char *outputFile, char * keyFile);
 void encode(mpz_t result, unsigned char *message, size_t messageLen, mpz_t n);
-void decode();
+char *decode(decrypted, n);
 void readKeysFromFile(const char *filename, mpz_t first, mpz_t second);
 size_t getSizeOfFile(FILE *file);
 unsigned char* getRandomNonZeroBytes(size_t length);
@@ -23,6 +23,7 @@ typedef enum {
     ENCRYPT,
     DECRYPT,
     COMPARE,
+    KEYGEN,
     MODE_UNKNOWN
 } Mode;
 
@@ -30,6 +31,7 @@ Mode getMode(const char *modeString) {
     if (strcmp(modeString, "encrypt") == 0) return ENCRYPT;
     if (strcmp(modeString, "decrypt") == 0) return DECRYPT;
     if (strcmp(modeString, "compare") == 0) return COMPARE;
+    if (strcmp(modeString, "keygen") == 0) return KEYGEN;
     return MODE_UNKNOWN;
 }
 
@@ -54,7 +56,7 @@ int main(int argc, char *argv[]) {
                 break;
             case 'g':
                 keyLength = atoi(optarg);
-                generateRSAKeyPair(keyLength);
+                mode = getMode("keygen");
                 break;
             case 'd':
                 currentMode = "decrypt";
@@ -84,15 +86,18 @@ int main(int argc, char *argv[]) {
         return 1;
     }
         
-    showArgs(inputFile, outputFile, keyFile, keyLength, mode);
+    showArgs(inputFile, outputFile, keyFile, keyLength, currentMode);
     
     /* if mode is either encrypt or decrypt and we don't have a input, output, keyFile path produce an error message. */
-    if ((mode=="encrypt" || mode=="decrypt") && (inputFile==NULL || outputFile==NULL || keyFile==NULL)){
+    if ((currentMode=="encrypt" || currentMode=="decrypt") && (inputFile==NULL || outputFile==NULL || keyFile==NULL)){
         fprintf(stderr, "Error: while in encrypt[-e]/decrypt[-d] mode you need the [-i],[-o],[-k] arguments.\nUse -h flag to show more info about arguments.\n");
         exit(EXIT_FAILURE);
     }
 
     switch(mode){
+        case KEYGEN:
+            generateRSAKeyPair(keyLength);
+            break;
         case ENCRYPT:
             encryptFile(inputFile, outputFile, keyFile);
             break;
@@ -127,12 +132,10 @@ void generateRSAKeyPair(int length){
         fprintf(stderr, "Generated number [p]/[q] is not prime number.\n");
         exit(EXIT_FAILURE);
     }
-    printf("PRIME\n");
+    mpz_mul(n,p,q);         // n = p * q 
+    gmp_printf("GENERATE:\nn = %Zd\n", q);
 
-    mpz_mul(n,p,q);   // n = p * q 
-
-    lambda(phi, p, q); // phi = lambda(n) = (p - 1) * (q - 1)
-    printf("HERE\n");
+    lambda(phi, p, q);      // phi = lambda(n) = (p - 1) * (q - 1)
 
     //  (e % lambda(n) != 0) AND (gcd(e, lambda) == 1) 
     do {
@@ -142,8 +145,9 @@ void generateRSAKeyPair(int length){
     } while(!(mpz_cmp_d(check_e,0) > 0 && mpz_cmp_d(check_gcd,1)==0));
     //  int mpz_cmp_d (const mpz_t op1, double op2)
     // while(check_e == 0 || check_gcd!=1);
-
+    gmp_printf("e = %Zd\n", e);
     mpz_invert(d, e, phi);
+    gmp_printf("d = %Zd\n", d);
 
     char publicPath[20]; 
     sprintf(publicPath, "public_%d.key", length);
@@ -151,30 +155,16 @@ void generateRSAKeyPair(int length){
     char privatePath[20];
     sprintf(privatePath, "private_%d.key", length);
 
-    size_t lenN = mpz_sizeinbase(n, 2) + 1;
-    size_t lenD = mpz_sizeinbase(d, 2) + 1;
-    size_t lenE = mpz_sizeinbase(e, 2) + 1;
-    
-    char n_str[lenN];
-    mpz_get_str(n_str, 2, n);
-    
-    char d_str[lenD];
-    mpz_get_str(d_str, 2, d);
-
-    char e_str[lenN];
-    mpz_get_str(e_str, 2, e);
-
     // The public key consists of n and d, in this order.
     // The private key consists of n and e, in this order
 
-    writeKeyToFile(publicPath, n_str, d_str, lenN+lenD);    // write to public file n, d
-    writeKeyToFile(privatePath, n_str, e_str, lenN+lenE);   // write to private file n, e
+    writeKeyToFile(publicPath, n, d);    // write to public file n, d
+    writeKeyToFile(privatePath, n, e);   // write to private file n, e
 
     mpz_clears(p, q, n, e, d, phi, check_e, check_gcd, NULL);
 }
 
-void writeKeyToFile(const char* filename, const char* str1, const char* str2, const size_t buffer_size){
-    char resultString[buffer_size];
+void writeKeyToFile(const char* filename, mpz_t first, mpz_t second){
     FILE *f = fopen(filename, "w");
 
     if (f == NULL) {
@@ -182,9 +172,8 @@ void writeKeyToFile(const char* filename, const char* str1, const char* str2, co
         exit(EXIT_FAILURE);
     }
     
-    sprintf(resultString, "%s,%s", str1, str2);
-    fprintf(f, "%s", resultString);
-
+    gmp_fprintf(f, "%Zd,%Zd", first, second);
+    
     printf("Wrote to file: %s\n", filename);
     fclose(f);
     printf("Closed file:   %s\n", filename);
@@ -261,15 +250,13 @@ void encryptFile(char *inputFile, char *outputFile, char *keyFile){
 
     // check if file opened correctly
     if (fin == NULL || fout == NULL) {
-        fprintf(stderr, "Error: failed to open file -> %s\n", inputFile);
+        fprintf(stderr, "Error: failed to open file -> %s or %s \n", inputFile, outputFile);
         mpz_clears(n, e,currentBlock, cypher, encodedBlock, NULL);
         exit(EXIT_FAILURE);
     }
     readKeysFromFile(keyFile, n, e);
     gmp_printf("The n: %Zd\n", n);
     gmp_printf("The e: %Zd\n", e);
-
-    char ch;
     
     size_t fileSize = getSizeOfFile(fin);
     char *message = malloc(fileSize + 1);
@@ -291,7 +278,6 @@ void encryptFile(char *inputFile, char *outputFile, char *keyFile){
     mpz_powm(cypher,encodedBlock,e,n);
     gmp_printf("CIPHER: %Zd\n", cypher);
     
-    fprintf(fout, "%s", cypher);
     gmp_fprintf(fout, "%Zd",cypher);
     printf("--------------\n");
 
@@ -305,20 +291,29 @@ void encode(mpz_t result, unsigned char *message, size_t dLen, mpz_t n){
     size_t kLen = 0; 
     void *p = mpz_export(NULL, &kLen, 1, sizeof(char), 0, 0, n);
     unsigned char *n_bytes = malloc(kLen);  
+    
+    if (n_bytes == NULL) {
+        fprintf(stderr, "Failed memory allocation.");
+        exit(EXIT_FAILURE);
+    }
+    
     memcpy(n_bytes, p, kLen);               
     free(p);                                
 
+    // print n bytes
     printf("kLen = %d\nBytes: ", kLen);
     for (int i = 0; i<kLen; i++){
         printf("%02X ", n_bytes[i]);
     }
 
+    // print message bytes
     printf("\ndLen = %d\nBytes: ", dLen);
     for (int i = 0; i<dLen; i++){
         printf("%02X ", message[i]);
     }
     printf("\n");
-    if (dLen > kLen-11){ // migth be dLen < kLen-11
+
+    if (dLen > kLen-11){
         fprintf(stderr, "Not Right size for padding.");
         exit(EXIT_FAILURE);
     }
@@ -356,7 +351,7 @@ void encode(mpz_t result, unsigned char *message, size_t dLen, mpz_t n){
 unsigned char* getRandomNonZeroBytes(size_t length){
     unsigned char* bytes = malloc(length);
     if (bytes == NULL) {
-        fprintf(stderr, "Failed memory allocation.HERE");
+        fprintf(stderr, "Failed memory allocation.");
         exit(EXIT_FAILURE);
     }
 
@@ -376,7 +371,132 @@ unsigned char* getRandomNonZeroBytes(size_t length){
 }
 
 void decryptFile(char *inputFile, char *outputFile, char * keyFile){
+    mpz_t n,d, cypher, decrypted;
+    mpz_inits(n,d, cypher, decrypted, NULL);
 
+    FILE *fin = fopen(inputFile, "r");
+    FILE *fout = fopen(outputFile, "w");
+
+    // check if file opened correctly
+    if (fin == NULL || fout == NULL) {
+        fprintf(stderr, "Error: failed to open file -> %s or %s \n", inputFile, outputFile);
+        mpz_clears(n, d, cypher, decrypted, NULL);
+        fclose(fin);
+        fclose(fout);
+        exit(EXIT_FAILURE);
+    }
+    readKeysFromFile(keyFile, n, d);
+    gmp_printf("The n: %Zd\n", n);
+    gmp_printf("The d: %Zd\n", d);
+
+    // Assuming the numbers are not excessively large, a fixed-size buffer is used
+    char line[1024]; // Adjust the size as necessary for your numbers
+    if (fgets(line, sizeof(line), fin) == NULL) {
+        fprintf(stderr, "Failed to read the line from the file\n");
+        mpz_clears(n, d, cypher, decrypted, NULL);
+        fclose(fin);
+        fclose(fout);
+        exit(EXIT_FAILURE);
+    }
+
+    // Now use gmp_sscanf to parse the numbers from the line
+    if (gmp_sscanf(line, "%Zd", cypher) != 1) {
+        fprintf(stderr, "Failed to parse the cypher from the cypher file.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    gmp_printf("Cypher => %Zd \n", cypher);
+    mpz_powm(decrypted,cypher,d,n);
+
+
+    char* final_message = decode(decrypted, n);
+    printf("Final Message: \n%s\n", final_message);
+
+
+    mpz_clears(n, d, cypher, decrypted, NULL);
+    fclose(fin);
+    fclose(fout);
+
+}
+
+char *decode(mpz_t decrypted, mpz_t n){
+    size_t kLen = 0; 
+    void *p = mpz_export(NULL, &kLen, 1, sizeof(char), 0, 0, n);
+    unsigned char *n_bytes = malloc(kLen);  
+    if (n_bytes == NULL) {
+        fprintf(stderr, "Failed memory allocation.\n");
+        free(n_bytes);
+        exit(EXIT_FAILURE);
+    }
+    memcpy(n_bytes, p, kLen);               
+    free(p);                                
+
+    // print n bytes
+    printf("kLen = %d\nBytes: ", kLen);
+    for (int i = 0; i<kLen; i++){
+        printf("%02X ", n_bytes[i]);
+    }
+
+    size_t dLen = 0; 
+    p = mpz_export(NULL, &dLen, 1, sizeof(char), 0, 0, decrypted);
+    unsigned char *decrypted_bytes = malloc(dLen); 
+    if (decrypted_bytes == NULL) {
+        fprintf(stderr, "Failed memory allocation.\n");
+        free(n_bytes);
+        free(decrypted_bytes);
+        exit(EXIT_FAILURE);
+    }
+    memcpy(decrypted_bytes, p, dLen);               
+    free(p);                                
+
+    // print decrypted bytes
+    printf("dLen = %d\nDecrypted Bytes: ", dLen);
+    for (int i = 0; i<dLen; i++){
+        printf("%02X ", decrypted_bytes[i]);
+    }
+
+    // assert decrypted < n dLen < kLen
+    if (!(mpz_cmp(decrypted, n) < 0) || !(dLen<kLen)){
+        fprintf(stderr, "Wrong sizes.\n");
+        free(n_bytes);
+        free(decrypted_bytes);
+        exit(EXIT_FAILURE);
+    }
+
+
+
+    if (decrypted_bytes[0] != 0x00 || decrypted_bytes[1] != 0x02){
+        fprintf(stderr, "Failed to read the line from the file\n");
+        free(n_bytes);
+        free(decrypted_bytes);
+        exit(EXIT_FAILURE);
+    }
+    size_t index = 2;
+    while(index < kLen){
+        if (decrypted_bytes[index] == 0){
+            index++;
+            break;
+        }
+        index++;
+        if (index == kLen){
+            fprintf(stderr, "Error while decoding the message.\n");
+            free(n_bytes);
+            free(decrypted_bytes);
+            exit(EXIT_FAILURE);
+        }
+    }
+    size_t dataSize = kLen-index+1;
+    char *result = malloc(kLen-index+1);
+    if (result == NULL) {
+        fprintf(stderr, "Memory allocation failed for result.\n");
+        free(n_bytes);
+        free(decrypted_bytes);
+        exit(EXIT_FAILURE);
+    }
+    memcpy(result, decrypted_bytes + index, dataSize);
+    free(n_bytes);
+    free(decrypted_bytes);
+    return result;
 }
 
 void readKeysFromFile(const char *filename, mpz_t first, mpz_t second){
@@ -391,14 +511,14 @@ void readKeysFromFile(const char *filename, mpz_t first, mpz_t second){
 
     // fill the buffer with the file componenets
     if (fgets(buffer, sizeof(buffer), file) == NULL) {
-        printf("Failed to read the line from the file\n");
+        fprintf(stderr, "Failed to read the line from the file\n");
         fclose(file);
         exit(EXIT_FAILURE);
     }
 
     // parse the keys from the buffer, show to the gmp_sscanf that the format is "n,e"
     if (gmp_sscanf(buffer, "%Zd,%Zd", first, second) != 2) {
-        printf("Failed to parse two mpz_t numbers from the line\n");
+        fprintf(stderr, "Failed to parse two mpz_t keys from the file.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -415,10 +535,10 @@ size_t getSizeOfFile(FILE *file){ // file has to be already opened
 }
     
 
-void showArgs(char *inputFile, char * outputFile, char *keyFile, int keyLength, char * mode){
+void showArgs(char *inputFile, char * outputFile, char *keyFile, int keyLength, char * currentMode){
     printf("Input File: %s\n", inputFile);
     printf("Output File: %s\n", outputFile);
     printf("Key File: %s\n", keyFile);
     printf("Key Length = %d\n", keyLength);
-    printf("Mode = %s\n", mode);
+    printf("Mode = %s\n", currentMode);
 }
