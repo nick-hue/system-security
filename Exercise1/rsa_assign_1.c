@@ -8,7 +8,7 @@
 void showArgs(char *inputFile, char * outputFile, char *keyFile, int keyLength, char * currentMode);
 void generateRSAKeyPair(int length);
 void writeKeyToFile(const char* filename, mpz_t first, mpz_t second);
-void generateRandomPrime(mpz_t result, int num_bits);
+void generateRandomPrime(mpz_t result, int seed, int length);
 void lambda(mpz_t result, mpz_t p, mpz_t q);
 void makeMeasurements(char *outputFile);
 void encryptFile(char *inputFile, char *outputFile, char * keyFile);
@@ -120,8 +120,8 @@ void generateRSAKeyPair(int length){
     mpz_t p, q, n, e, d, phi, check_e, check_gcd;
     mpz_inits(p, q, n, e, d, phi, check_e, check_gcd, NULL);
 
-    generateRandomPrime(p, length);
-    generateRandomPrime(q, length);
+    generateRandomPrime(p, 15, length);
+    generateRandomPrime(q, 20, length);
 
     gmp_printf("p = %Zd\n", p);
     gmp_printf("q = %Zd\n", q);
@@ -138,7 +138,7 @@ void generateRSAKeyPair(int length){
 
     //  (e % lambda(n) != 0) AND (gcd(e, lambda) == 1) 
     do {
-        generateRandomPrime(e, 1024);   // e
+        generateRandomPrime(e, 2, length);   // e
         mpz_mod(check_e, e, phi);       // e % lambda(n)
         mpz_gcd(check_gcd, e, phi);     // gcd(e, lambda)
     } while(!(mpz_cmp_d(check_e,0) > 0 && mpz_cmp_d(check_gcd,1)==0));
@@ -189,12 +189,12 @@ void lambda(mpz_t result, mpz_t p, mpz_t q){
     mpz_clears(p_1, q_1, NULL);
 }
 
-void generateRandomPrime(mpz_t result, int length){
+void generateRandomPrime(mpz_t result, int seed, int length){
     gmp_randstate_t state;
 
     // Initialize random state
     gmp_randinit_default(state);
-    gmp_randseed_ui(state, time(NULL)); // Seed with current time
+    gmp_randseed_ui(state, time(NULL)+seed); // Seed with current time
 
     do {
         mpz_urandomb(result, state, length/2);                  // Generate a random number with length bits
@@ -419,7 +419,7 @@ char *decode(mpz_t decrypted, mpz_t n){
 
     size_t dLen = 0; 
     p = mpz_export(NULL, &dLen, 1, sizeof(char), 0, 0, decrypted);
-    unsigned char *decrypted_bytes = malloc(dLen); 
+    unsigned char *decrypted_bytes = malloc(dLen+1); 
     if (decrypted_bytes == NULL) {
         fprintf(stderr, "Failed memory allocation.\n");
         free(n_bytes);
@@ -446,7 +446,7 @@ char *decode(mpz_t decrypted, mpz_t n){
     printf("\n\nBYTES: %02X %02X", decrypted_bytes[0], decrypted_bytes[1]);
 
     if (decrypted_bytes[0] != 0x00 || decrypted_bytes[1] != 0x02){
-        fprintf(stderr, "Failed to read the line from the file.\n");
+        fprintf(stderr, "\nBytes [0] or [1] are not 0x00 or 0x02.\n");
         free(n_bytes);
         free(decrypted_bytes);
         exit(EXIT_FAILURE);
