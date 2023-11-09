@@ -40,21 +40,18 @@ size_t getSizeOfFile(FILE *file);
 void log_hash_content(FILE *hash_fp);
 int get_access_type(const char *path, const char *modeString);
 int get_access_denied_flag(const char * path, int access_type);
+void make_symlink(const char *target, const char *sym_link_path);
+char * get_target_path_by_symlink(const char *symlinkPath);
+void make_log(const char *path, int access_type);
 
 FILE *fopen(const char* path, const char* mode){
     printf("test function in path: %s\n", path);
 
     // getting current time 
-    time_t t = time(NULL);
-    struct tm tm = *localtime(&t);     
+        
     int access_type = get_access_type(path, mode);
-    int access_flag = get_access_denied_flag(path, access_type);
-
-    FILE *hash_fp = (*original_fopen)(path, "r");
-
-    // write log to logfile 
-    fprintf(fout, "UID: %d, Filename: %s, Date: %02d/%02d/%d, Timestamp: %02d:%02d:%02d, Access Type: %d, Access denied flag: %d, File fingerprint: ", getuid(), path, tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, access_type, access_flag);
-    log_hash_content(hash_fp);
+    // open the file to get its contents 
+    make_log(path, access_type);
 
     return (*original_fopen)(path,mode);
 }
@@ -65,6 +62,15 @@ size_t fwrite(const void *ptr, size_t size_of_element, size_t number_of_elements
     size_t (*original_fwrite)(const void*, size_t, size_t, FILE *);
     original_fwrite = dlsym(RTLD_NEXT, "fwrite");
     size_t written = (*original_fwrite)(ptr, size_of_element, number_of_elements, stream);
+    
+    // can get      : UID, Date, Timestamp, Access type(2-writing) 
+    // can't get    : filename(path), access_flag(path), fingerprint(path)
+    
+    char *targetPath = (char *)malloc(1024);
+    targetPath = get_target_path_by_symlink("symlink/project_file_symlink2");
+    printf("%s", targetPath);
+    int access_type = 2;
+    make_log(targetPath, access_type);
 
     return written;
 }
@@ -100,11 +106,23 @@ void log_hash_content(FILE *hash_fp){
         fprintf(fout, "%02x", md_value[i]);
     }
 
-    char tmp[2] = ";\n";
+    char tmp[3] = ";\n\0";
     fprintf(fout, "%s", tmp); // the fprintf function runs the fwrite function if it does not take the "%s" argument
 
     fclose(hash_fp);
     free(buffer);
+}
+
+void make_log(const char *path, int access_type){
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t); 
+
+    FILE *hash_fp = (*original_fopen)(path, "r");
+    int access_flag = get_access_denied_flag(path, access_type);
+    // write log to logfile 
+
+    fprintf(fout, "UID: %d, Filename: %s, Date: %02d/%02d/%d, Timestamp: %02d:%02d:%02d, Access Type: %d, Access denied flag: %d, File fingerprint: ", getuid(), path, tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, access_type, access_flag);
+    log_hash_content(hash_fp);
 }
 
 int get_access_type(const char *path, const char *modeString){
@@ -127,6 +145,33 @@ int get_access_denied_flag(const char * path, int access_type){
     {
         return -1;
     }
+}
+
+void make_symlink(const char *target, const char *sym_link_path){
+    if (symlink(target, sym_link_path) == -1) {
+        perror("symlink failed");
+        exit(1);
+    } else {
+        printf("Symlink created: %s -> %s\n", sym_link_path, target);
+    }
+}
+
+char * get_target_path_by_symlink(const char *symlinkPath){
+    char *targetPath = (char *)malloc(1024);
+    ssize_t len;
+
+    len = readlink(symlinkPath, targetPath, 1023);
+    
+    if (len == -1) {
+        // Error occurred; e.g., the file is not a symlink or doesn't exist
+        perror("readlink");
+        exit(EXIT_FAILURE);
+    }
+
+    targetPath[len] = '\0';
+
+    printf("The symlink '%s' points to '%s'\n", symlinkPath, targetPath);
+    return targetPath;
 }
 
 size_t getSizeOfFile(FILE *file){ // file has to be already opened 
