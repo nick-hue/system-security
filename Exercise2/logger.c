@@ -7,9 +7,16 @@
 #include <string.h>
 #include <openssl/evp.h>
 
+FILE* (*original_fopen)(const char*, const char*);
+FILE *fout = NULL;
+
 __attribute__((constructor))
 void initialize() {
     // Initialization code here
+    original_fopen = dlsym(RTLD_NEXT, "fopen");
+
+    fout = original_fopen("file_logging.log", "a");
+
     printf("Custom library loaded. Overriding fopen and fwrite.\n");
 }
 
@@ -21,24 +28,9 @@ int get_access_denied_flag(const char * path, int access_type);
 FILE *fopen(const char* path, const char* mode){
     printf("test function in path: %s\n", path);
 
-    FILE* (*original_fopen)(const char*, const char*);
-    original_fopen = dlsym(RTLD_NEXT, "fopen");
-
     // getting current time 
     time_t t = time(NULL);
-    struct tm tm = *localtime(&t); 
-    
-    FILE *fout;
-    if (access("file_logging.log", F_OK) == 0){
-        fout = (*original_fopen)("file_logging.log", "a");
-    }
-    else {
-        fout = (*original_fopen)("file_logging.log", "w");
-    }
-    if (!fout){
-        printf("Error: opening logging file. \n");
-        exit(1);
-    }
+    struct tm tm = *localtime(&t);     
 
     int access_type = get_access_type(path, mode);
     int access_flag = get_access_denied_flag(path, access_type);
