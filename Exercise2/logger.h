@@ -1,4 +1,5 @@
 #include <unistd.h>
+#include <stdio.h>
 
 typedef struct Log {
     uid_t user_id;
