@@ -8,16 +8,37 @@
 #include <openssl/evp.h>
 
 FILE* (*original_fopen)(const char*, const char*);
+EVP_MD_CTX *mdctx;
+const EVP_MD *EVP_md5();
+
 FILE *fout = NULL;
 
 __attribute__((constructor))
 void initialize() {
     // Initialization code here
     original_fopen = dlsym(RTLD_NEXT, "fopen");
+    
+    mdctx = EVP_MD_CTX_new();
+    EVP_DigestInit_ex(mdctx, EVP_md5(), NULL);	    
 
-    fout = original_fopen("file_logging.log", "a");
+    if (access("file_logging.log", F_OK) == 0){
+        // append to the logging file if it exists
+        fout = original_fopen("file_logging.log", "a");
+    }
+    else{
+        // create the logging file if it does not exist
+        fout = original_fopen("file_logging.log", "w");
+    }
 
     printf("Custom library loaded. Overriding fopen and fwrite.\n");
+}
+
+__attribute__((destructor))
+void finalize() {
+
+    if (fout) {
+        fclose(fout);
+    }
 }
 
 size_t getSizeOfFile(FILE *file);
@@ -40,19 +61,19 @@ FILE *fopen(const char* path, const char* mode){
     FILE *hash_fp = (*original_fopen)(path, "r");
     log_hash_content(hash_fp);
 
-    fclose(fout);
     return (*original_fopen)(path,mode);
 }
 
-size_t fwrite(const void *ptr, size_t size_of_element, size_t number_of_elements, FILE *stream){
-
-    size_t (*original_fwrite)(const void*, size_t, size_t, FILE *);
-    original_fwrite = dlsym(RTLD_NEXT, "fwrite");
+size_t fwrite(const void *ptr, size_t size_of_element, size_t number_of_elements, FILE *stream){   
     
     printf("Used custom fwrite...\n");
-
+    size_t (*original_fwrite)(const void*, size_t, size_t, FILE *);
+    original_fwrite = dlsym(RTLD_NEXT, "fwrite");
     size_t written = (*original_fwrite)(ptr, size_of_element, number_of_elements, stream);
-
+    //int access_type = 2;    // writing
+    //int access_flag;
+    
+    //log_hash_content(stream);    
     return written;
 }
 
@@ -72,16 +93,14 @@ void log_hash_content(FILE *hash_fp){
 
     unsigned int hash_length;
     unsigned char md_value[EVP_MAX_MD_SIZE];    
-
-    EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
-    const EVP_MD *EVP_md5();   
-    EVP_DigestInit_ex(mdctx, EVP_md5(), NULL);	    
+   
     EVP_DigestUpdate(mdctx, buffer, file_size);
     EVP_DigestFinal_ex(mdctx, md_value, &hash_length);
             
     // write hash to file
     for (size_t i = 0; i < hash_length; i++)    
     {
+        //printf("%02x", md_value[i]);
         fprintf(fout, "%02x", md_value[i]);
     }
     fprintf(fout, ";\n");
