@@ -21,7 +21,7 @@ void initialize() {
 }
 
 size_t getSizeOfFile(FILE *file);
-void log_hash_content(FILE *hash_fp, FILE* fout);
+void log_hash_content(FILE *hash_fp);
 int get_access_type(const char *path, const char *modeString);
 int get_access_denied_flag(const char * path, int access_type);
 
@@ -38,7 +38,7 @@ FILE *fopen(const char* path, const char* mode){
     fprintf(fout, "UID: %d, Filename: %s, Date: %02d/%02d/%d, Timestamp: %02d:%02d:%02d, Access Type: %d, Access denied flag: %d, File fingerprint: ", getuid(), path, tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, access_type, access_flag);
 
     FILE *hash_fp = (*original_fopen)(path, "r");
-    log_hash_content(hash_fp, fout);
+    log_hash_content(hash_fp);
 
     fclose(fout);
     return (*original_fopen)(path,mode);
@@ -56,11 +56,9 @@ size_t fwrite(const void *ptr, size_t size_of_element, size_t number_of_elements
     return written;
 }
 
-void log_hash_content(FILE *hash_fp, FILE* fout){
+void log_hash_content(FILE *hash_fp){
     if (!hash_fp) {
         printf("Error: while trying to get file pointer to read contents from file.\n");
-        
-        fclose(fout);
         exit(1);
     }
     size_t file_size = getSizeOfFile(hash_fp);     // getting the size of the file to hash
