@@ -1,1 +1,3 @@
-d74c512116a6487e75740f9850b5df94
+UID: 1000, Filename: write.txt, Date: 09/11/2023, Timestamp: 15:14:05, Access Type: 2, Access denied flag: 0, File fingerprint: d41d8cd98f00b204e9800998ecf8427e;
+UID: 1000, Filename: test.txt, Date: 09/11/2023, Timestamp: 15:14:14, Access Type: 1, Access denied flag: 0, File fingerprint: d74c512116a6487e75740f9850b5df94;
+UID: 1000, Filename: write.txt, Date: 09/11/2023, Timestamp: 15:14:33, Access Type: 0, Access denied flag: 1, File fingerprint: d41d8cd98f00b204e9800998ecf8427e;

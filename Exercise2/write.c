@@ -3,7 +3,7 @@
 int main(){
     printf("Calling the fopen() function for writing ...\n");
 
-    FILE *f = fopen("test.txt", "w");
+    FILE *f = fopen("write.txt", "w");
     if (!f){
         printf("Error: opening file\n");
         return 1;

@@ -19,16 +19,31 @@ int get_access_type(const char *path, const char *modeString) {
 FILE *fopen(const char* path, const char* mode){
     printf("test function in path: %s\n", path);
 
+    FILE* (*original_fopen)(const char*, const char*);
+    original_fopen = dlsym(RTLD_NEXT, "fopen");
+
     time_t t = time(NULL);
     struct tm tm = *localtime(&t);
-        
+    FILE *fout;
+    if (access("file_logging.log", F_OK) == 0){
+        fout = (*original_fopen)("file_logging.log", "a");
+    }
+    else {
+        fout = (*original_fopen)("file_logging.log", "w");
+    }
+    if (!fout){
+        printf("Error: opening logging file. \n");
+        exit(1);
+    }
+
+    // UID: 1, Filename: "test.txt", Date: 27/11/2001, Timestamp:16:20, Access Type: 0, Is-action-denied flag: 0, File fingerprint: qwoidjq0wijasoijdoijas;
     printf("UID: %d\n", getuid());
     printf("Filename: %s\n", path);    
-    printf("Date: %d-%02d-%02d\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday);
+    printf("Date: %02d/%02d/%d\n", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
     printf("Timestamp: %02d:%02d:%02d\n", tm.tm_hour, tm.tm_min, tm.tm_sec);
     int access_type = get_access_type(path, mode);
     printf("Access Type: %d\n", access_type);
-    
+
     int access_flag;
     if (access_type==0 || access_type== 2)
     {
@@ -46,9 +61,6 @@ FILE *fopen(const char* path, const char* mode){
     access_flag = -access_flag; // to make the -1 into a 1 if the access function, 0 still is 0; 
 
     printf("Access denied flag: %d\n", access_flag);
-
-    FILE* (*original_fopen)(const char*, const char*);
-    original_fopen = dlsym(RTLD_NEXT, "fopen");
 
     FILE *fp = (*original_fopen)(path, mode);
     if (!fp) {
@@ -82,18 +94,19 @@ FILE *fopen(const char* path, const char* mode){
             printf("%02x", md_value[i]);    
         }
         printf("\n");
-        //printf("\n%s\n", buffer);
 
-        FILE *fout = (*original_fopen)("file_logging.log", "w");
+        // write log to file
+        fprintf(fout, "UID: %d, Filename: %s, Date: %02d/%02d/%d, Timestamp: %02d:%02d:%02d, Access Type: %d, Access denied flag: %d, File fingerprint: ", getuid(), path, tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, access_type, access_flag);
+        
         // write hash to file
         for (size_t i = 0; i < hash_length; i++)    
         {
             fprintf(fout, "%02x", md_value[i]);
         }
-
+        fprintf(fout, ";\n");
         fclose(fout);
         free(buffer);
-        }
+    }
     else{
         printf("Error: while trying to get file pointer to read contents from file.\n");
         exit(1);
