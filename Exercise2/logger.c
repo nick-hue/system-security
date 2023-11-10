@@ -1,11 +1,6 @@
 #define _GNU_SOURCE
 
-#include <stdio.h>
-#include <dlfcn.h>
-#include <unistd.h>
-#include <time.h>
-#include <string.h>
-#include <openssl/evp.h>
+#include "logger.h"
 
 FILE* (*original_fopen)(const char*, const char*);
 FILE *fout = NULL;
@@ -35,14 +30,6 @@ void finalize() {
     }
     
 }
-
-size_t getSizeOfFile(FILE *file);
-void log_hash_content(FILE *hash_fp);
-int get_access_type(const char *path, const char *modeString);
-int get_access_denied_flag(const char * path, int access_type);
-void make_symlink(const char *target, const char *sym_link_path);
-char * get_target_path_by_symlink(const char *symlinkPath);
-void make_log(const char *path, int access_type);
 
 FILE *fopen(const char* path, const char* mode){
     printf("test function in path: %s\n", path);
