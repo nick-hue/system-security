@@ -4,8 +4,6 @@
 
 FILE* (*original_fopen)(const char*, const char*);
 FILE *fout = NULL;
-int writingFiles = 0;
-int loggedWritingFiles = 0;
 
 __attribute__((constructor))
 void initialize() {
@@ -41,7 +39,6 @@ FILE *fopen(const char* path, const char* mode){
         char sym_path[1024];
         sprintf(sym_path, "symlink/symlink_file_%d", fileno(f));
         make_symlink(path, sym_path);
-        writingFiles++;
     }
 
     int access_denied_flag = get_access_denied_flag(path, access_type);
@@ -65,9 +62,13 @@ size_t fwrite(const void *ptr, size_t size_of_element, size_t number_of_elements
     char symlinkPath[1024];
     
     sprintf(symlinkPath, "symlink/symlink_file_%d", fileno(stream));
-    loggedWritingFiles++;
 
     targetPath = get_target_path_by_symlink(symlinkPath);
+
+    if (remove(symlinkPath) == 0)
+        printf("Simlink deleted successfully\n");
+    else
+        printf("Unable to delete the file\n");
 
     int access_type = 2;
     int access_denied_flag = -access(targetPath, W_OK); // if 0->0, if -1->1
@@ -147,6 +148,7 @@ int get_access_denied_flag(const char * path, int access_type){
 
 void make_symlink(const char *target, const char *sym_link_path){
     if (symlink(target, sym_link_path) == -1) {
+        printf("file: %s\n", target);
         perror("symlink failed");
         exit(1);
     } else {
