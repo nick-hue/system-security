@@ -1,5 +1,15 @@
 UID: 1000, Filename: test.txt, Date: 10/11/2023, Timestamp: 18:38:31, Access Type: 1, Access denied flag: 0, File fingerprint: 5dc5a1984c0fab4f43e71be8ef6eff16 ;
-UID: 1000, Filename: write.txt, Date: 10/11/2023, Timestamp: 18:38:38, Access Type: -1, Access denied flag: -1, File fingerprint: d41d8cd98f00b204e9800998ecf8427e ;
+UID: 1000, Filename: write.txt, Date: 10/11/2023, Timestamp: 18:38:38, Access Type: 2, Access denied flag: -1, File fingerprint: d41d8cd98f00b204e9800998ecf8427e ;
 UID: 1000, Filename: write.txt, Date: 10/11/2023, Timestamp: 18:38:38, Access Type: 2, Access denied flag: 0, File fingerprint: d41d8cd98f00b204e9800998ecf8427e ;
 UID: 1000, Filename: write.txt, Date: 10/11/2023, Timestamp: 18:38:43, Access Type: 1, Access denied flag: 0, File fingerprint: e7355f55c2ca7792f2a5aba9604e68a3 ;
 UID: 1000, Filename: write.txt, Date: 10/11/2023, Timestamp: 18:38:43, Access Type: 2, Access denied flag: 0, File fingerprint: e7355f55c2ca7792f2a5aba9604e68a3 ;
+UID: 1000, Filename: write1.txt, Date: 10/11/2023, Timestamp: 18:38:43, Access Type: 1, Access denied flag: 1, File fingerprint: e7355f55c2ca7792f2a5aba9604e68a3 ;
+UID: 1000, Filename: write.txt, Date: 10/11/2023, Timestamp: 18:38:43, Access Type: 2, Access denied flag: 0, File fingerprint: e7355f55c2ca7792f2a5aba9604e68a3 ;
+UID: 1000, Filename: write2.txt, Date: 10/11/2023, Timestamp: 18:38:43, Access Type: 1, Access denied flag: 1, File fingerprint: e7355f55c2ca7792f2a5aba9604e68a3 ;
+UID: 1000, Filename: write3.txt, Date: 10/11/2023, Timestamp: 18:38:43, Access Type: 1, Access denied flag: 1, File fingerprint: e7355f55c2ca7792f2a5aba9604e68a3 ;
+UID: 1000, Filename: write4.txt, Date: 10/11/2023, Timestamp: 18:38:43, Access Type: 1, Access denied flag: 1, File fingerprint: e7355f55c2ca7792f2a5aba9604e68a3 ;
+UID: 1000, Filename: write5.txt, Date: 10/11/2023, Timestamp: 18:38:43, Access Type: 1, Access denied flag: 1, File fingerprint: e7355f55c2ca7792f2a5aba9604e68a3 ;
+UID: 1000, Filename: write6.txt, Date: 10/11/2023, Timestamp: 18:38:43, Access Type: 1, Access denied flag: 1, File fingerprint: e7355f55c2ca7792f2a5aba9604e68a3 ;
+UID: 1000, Filename: write7.txt, Date: 10/11/2023, Timestamp: 18:38:43, Access Type: 1, Access denied flag: 1, File fingerprint: e7355f55c2ca7792f2a5aba9604e68a3 ;
+UID: 1000, Filename: file_logging.log, Date: 11/11/2023, Timestamp: 01:47:09, Access Type: 1, Access denied flag: 0, File fingerprint: e4869f9bff8f89c14324fb9c6299cf5b ;
+UID: 1000, Filename: file_logging.log, Date: 11/11/2023, Timestamp: 01:47:23, Access Type: 1, Access denied flag: 0, File fingerprint: 4d4f795fed85665a3a388a4bba0c7048 ;

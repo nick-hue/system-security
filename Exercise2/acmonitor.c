@@ -16,29 +16,33 @@ int main(){
     char *buffer = (char *)malloc(file_size);
     size_t bytes_read = fread(buffer, 1, file_size, f);
 
-    printf("Opened Log file:\n%s\n", buffer);
+    printf("Opened Log file:\n%ld\n", bytes_read);
     
     char *line, *field, *info;
+    char* line_saveptr = NULL;
 
-    line = strtok(buffer, ";");
+    line = strtok_r(buffer, ";", &line_saveptr);
     printf("LINE: %s\n", line);
+
+    char* field_saveptr = NULL;
+    char* info_saveptr = NULL;
 
     while (line != NULL) {
         printf("Log Entry:\n");
 
-        field = strtok(line, ",");
+        field = strtok_r(line, ",", &field_saveptr);
         while (field != NULL) {
             //printf("%s\n", field);
             
-            info = strtok(field, ":");
+            info = strtok_r(field, ":", &info_saveptr);
             while(info != NULL){
                 printf("%s ", info);
-                info = strtok(NULL, ":");
+                info = strtok_r(NULL, ":", &info_saveptr);
             }
-            field = strtok(NULL, ",");
+            field = strtok_r(NULL, ",", &field_saveptr);
         }
 
-        line = strtok(NULL, ";");
+        line = strtok_r(NULL, ";", &line_saveptr);
     }
     
     printf("\n");
