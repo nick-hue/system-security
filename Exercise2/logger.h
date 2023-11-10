@@ -42,17 +42,7 @@ char * get_target_path_by_symlink(const char *symlinkPath);
 /*
     Makes the entire log of the current opening / writing function 
 */
-void make_log(const char *path, int access_type);
-
-typedef struct Log {
-    uid_t user_id;
-    char *filename;
-    Date date;
-    Timestamp timestamp;
-    int access_type;
-    int access_denied_flag;
-    unsigned char *file_fingerprint;
-} Log;
+void make_log(const char *path, int access_type, int access_flag);
 
 typedef struct Date {
     int day;
@@ -65,5 +55,17 @@ typedef struct Timestamp {
     int minutes;
     int seconds;
 } Timestamp;
+
+typedef struct Log {
+    uid_t user_id;
+    char *filename;
+    Date date;
+    Timestamp timestamp;
+    int access_type;
+    int access_denied_flag;
+    unsigned char *file_fingerprint;
+} Log;
+
+
 
 #endif

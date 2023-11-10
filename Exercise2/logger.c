@@ -4,6 +4,8 @@
 
 FILE* (*original_fopen)(const char*, const char*);
 FILE *fout = NULL;
+int writingFiles = 0;
+int loggedWritingFiles = 0;
 
 __attribute__((constructor))
 void initialize() {
@@ -32,15 +34,24 @@ void finalize() {
 }
 
 FILE *fopen(const char* path, const char* mode){
-    printf("test function in path: %s\n", path);
-
-    // getting current time 
-        
     int access_type = get_access_type(path, mode);
-    // open the file to get its contents 
-    make_log(path, access_type);
+    FILE* f = (*original_fopen)(path,mode);
 
-    return (*original_fopen)(path,mode);
+    if (strcmp(mode, "w")==0 || strcmp(mode, "a")==0){
+        char sym_path[1024];
+        sprintf(sym_path, "symlink/symlink_file_%d", fileno(f));
+        make_symlink(path, sym_path);
+        writingFiles++;
+    }
+
+    int access_denied_flag = get_access_denied_flag(path, access_type);
+    // open the file to get its contents 
+    make_log(path, access_type, access_denied_flag);
+    
+    char tmp[3] = ";\n\0";
+    fprintf(fout, "%s", tmp); // the fprintf function runs the fwrite function if it does not take the "%s" argument
+
+    return f;
 }
 
 size_t fwrite(const void *ptr, size_t size_of_element, size_t number_of_elements, FILE *stream){   
@@ -50,14 +61,21 @@ size_t fwrite(const void *ptr, size_t size_of_element, size_t number_of_elements
     original_fwrite = dlsym(RTLD_NEXT, "fwrite");
     size_t written = (*original_fwrite)(ptr, size_of_element, number_of_elements, stream);
     
-    // can get      : UID, Date, Timestamp, Access type(2-writing) 
-    // can't get    : filename(path), access_flag(path), fingerprint(path)
-    
     char *targetPath = (char *)malloc(1024);
-    targetPath = get_target_path_by_symlink("symlink/project_file_symlink2");
-    printf("%s", targetPath);
+    char symlinkPath[1024];
+    
+    sprintf(symlinkPath, "symlink/symlink_file_%d", fileno(stream));
+    loggedWritingFiles++;
+
+    targetPath = get_target_path_by_symlink(symlinkPath);
+
     int access_type = 2;
-    make_log(targetPath, access_type);
+    int access_denied_flag = -access(targetPath, W_OK); // if 0->0, if -1->1
+
+    make_log(targetPath, access_type, access_denied_flag);
+   
+    char tmp[3] = ";\n\0";
+    fprintf(fout, "%s", tmp); // the fprintf function runs the fwrite function if it does not take the "%s" argument
 
     return written;
 }
@@ -65,6 +83,8 @@ size_t fwrite(const void *ptr, size_t size_of_element, size_t number_of_elements
 void log_hash_content(FILE *hash_fp){
     if (!hash_fp) {
         printf("Error: while trying to get file pointer to read contents from file.\n");
+        char tmp[3] = ";\n\0";
+        fprintf(fout, "%s", tmp); // the fprintf function runs the fwrite function if it does not take the "%s" argument
         exit(1);
     }
 
@@ -93,21 +113,16 @@ void log_hash_content(FILE *hash_fp){
         fprintf(fout, "%02x", md_value[i]);
     }
 
-    char tmp[3] = ";\n\0";
-    fprintf(fout, "%s", tmp); // the fprintf function runs the fwrite function if it does not take the "%s" argument
-
     fclose(hash_fp);
     free(buffer);
 }
 
-void make_log(const char *path, int access_type){
+void make_log(const char *path, int access_type, int access_flag){
     time_t t = time(NULL);
     struct tm tm = *localtime(&t); 
 
     FILE *hash_fp = (*original_fopen)(path, "r");
-    int access_flag = get_access_denied_flag(path, access_type);
     // write log to logfile 
-
     fprintf(fout, "UID: %d, Filename: %s, Date: %02d/%02d/%d, Timestamp: %02d:%02d:%02d, Access Type: %d, Access denied flag: %d, File fingerprint: ", getuid(), path, tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, access_type, access_flag);
     log_hash_content(hash_fp);
 }
@@ -120,13 +135,9 @@ int get_access_type(const char *path, const char *modeString){
 }
 
 int get_access_denied_flag(const char * path, int access_type){
-    if (access_type==0 || access_type==2)
+    if (access_type==0 || access_type==1)
     {
         return -access(path, W_OK);
-    }
-    else if (access_type == 1)
-    {
-        return -access(path, R_OK);
     }
     else
     {
@@ -150,7 +161,6 @@ char * get_target_path_by_symlink(const char *symlinkPath){
     len = readlink(symlinkPath, targetPath, 1023);
     
     if (len == -1) {
-        // Error occurred; e.g., the file is not a symlink or doesn't exist
         perror("readlink");
         exit(EXIT_FAILURE);
     }

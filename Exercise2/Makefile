@@ -12,4 +12,4 @@ preload:
 	LD_PRELOAD=./logger.so ./read
 
 clean:
-	rm -f read logger.so
+	rm -f read logger.so symlink/** file_logging.log write.txt
