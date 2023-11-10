@@ -2,8 +2,6 @@
 #include "acmonitor.h"
 
 int main(){
-    printf("Calling the fopen() function for WRITING ...\n");
-    char str[] = "Hello World13123123132";
 
     FILE *f = fopen("file_logging.log", "r");
     if (!f){
@@ -19,21 +17,57 @@ int main(){
     size_t bytes_read = fread(buffer, 1, file_size, f);
 
     printf("Opened Log file:\n%s\n", buffer);
+    
+    char *line, *field, *info;
 
+    line = strtok(buffer, ";");
+    printf("LINE: %s\n", line);
 
-    Timestamp stamp = {
-        9,9,9
-    };
+    while (line != NULL) {
+        printf("Log Entry:\n");
 
+        field = strtok(line, ",");
+        while (field != NULL) {
+            //printf("%s\n", field);
+            
+            info = strtok(field, ":");
+            while(info != NULL){
+                printf("%s ", info);
+                info = strtok(NULL, ":");
+            }
+            field = strtok(NULL, ",");
+        }
 
-    Date date = {
-        12,12,2012
-    };
-    printf("%d:%d:%d", stamp.hours, stamp.minutes, stamp.minutes);
-
+        line = strtok(NULL, ";");
+    }
+    
+    printf("\n");
     free(buffer);
     fclose(f);
 
-    printf("Successfully opened file.\n");
     return 0;
+}
+
+
+void displayTimestamp(Timestamp stamp){
+    printf("Timestamp: %02d:%02d:%02d\n", stamp.hours, stamp.minutes, stamp.seconds);
+}
+
+void displayDate(Date date){
+    printf("Date: %02d/%02d/%d\n", date.day, date.month, date.year);
+}
+
+void displayFingerprint(unsigned char *bytes, size_t size){
+    for (size_t i = 0; i < size; i++){
+        printf("%02x", bytes[i]);
+    }
+}
+
+void displayLog(Log log){
+    printf("LOG: \nUID: %d, Filename: %s", log.user_id, log.filename);
+    displayDate(log.date);
+    displayTimestamp(log.timestamp);
+    printf("Access Type: %d, Access denied flag: %d, File fingerprint: ", log.access_type, log.access_denied_flag);
+    displayFingerprint(log.file_fingerprint, log.fingerprint_size);
+    printf("\n");
 }

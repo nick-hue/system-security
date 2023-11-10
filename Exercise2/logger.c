@@ -45,7 +45,7 @@ FILE *fopen(const char* path, const char* mode){
     // open the file to get its contents 
     make_log(path, access_type, access_denied_flag);
     
-    char tmp[3] = ";\n\0";
+    char tmp[4] = " ;\n\0";
     fprintf(fout, "%s", tmp); // the fprintf function runs the fwrite function if it does not take the "%s" argument
 
     return f;
@@ -75,7 +75,7 @@ size_t fwrite(const void *ptr, size_t size_of_element, size_t number_of_elements
 
     make_log(targetPath, access_type, access_denied_flag);
    
-    char tmp[3] = ";\n\0";
+    char tmp[4] = " ;\n\0";
     fprintf(fout, "%s", tmp); // the fprintf function runs the fwrite function if it does not take the "%s" argument
 
     return written;
@@ -84,7 +84,7 @@ size_t fwrite(const void *ptr, size_t size_of_element, size_t number_of_elements
 void log_hash_content(FILE *hash_fp){
     if (!hash_fp) {
         printf("Error: while trying to get file pointer to read contents from file.\n");
-        char tmp[3] = ";\n\0";
+        char tmp[4] = " ;\n\0";
         fprintf(fout, "%s", tmp); // the fprintf function runs the fwrite function if it does not take the "%s" argument
         exit(1);
     }

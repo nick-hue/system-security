@@ -6,10 +6,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <string.h>
-
-void dislayTimestamp(Timestamp stamp);
-void displayDate(Date date);
-void displayLog(Log log);
+#include <stdlib.h>
 
 typedef struct Date {
     int day;
@@ -31,6 +28,14 @@ typedef struct Log {
     int access_type;
     int access_denied_flag;
     unsigned char *file_fingerprint;
+    size_t fingerprint_size;
 } Log;
+
+void dislayTimestamp(Timestamp stamp);
+void displayDate(Date date);
+void displayFingerprint(unsigned char *bytes, size_t size);
+void displayLog(Log log);
+
+
 
 #endif
