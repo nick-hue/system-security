@@ -40,45 +40,63 @@ int main(){
             info = strtok_r(field, ":", &info_saveptr);
             while(info != NULL){
                 printf("%s->", info);
-                if ((strcmp(info, "UID") == 0) || (strcmp(info, "\nUID") == 0)){
+                if ((strcmp(info, "UID") == 0) || (strcmp(info, "\nUID") == 0))
+                {
                     info = strtok_r(NULL, ":", &info_saveptr);
                     printf("UID --------------> %s", info);
                     currentLog.user_id = atoi(info);
                     break;
-                } else if (strcmp(info, " Filename") == 0) {
+                } 
+                else if (strcmp(info, " Filename") == 0) 
+                {
                     info = strtok_r(NULL, ":", &info_saveptr);
                     printf("FILename ist %s", info);
                     currentLog.filename = info;
                     break;
-                } else if (strcmp(info, " Date") == 0){
+                } 
+                else if (strcmp(info, " Date") == 0)
+                {
                     info = strtok_r(NULL, ":", &info_saveptr);
                     Date current_date = getDate(info);
                     currentLog.date = current_date;
                     displayDate(current_date);
                     break;
-                } else if (strcmp(info, " Timestamp") == 0){
+                } 
+                else if (strcmp(info, " Timestamp") == 0)
+                {
                     Timestamp current_timestamp;
                     info = strtok_r(NULL, ":", &info_saveptr);
-                    current_timestamp.hours = atoi(info);
+                    currentLog.timestamp.hours = atoi(info);
                     info = strtok_r(NULL, ":", &info_saveptr);
-                    current_timestamp.minutes = atoi(info);
+                    currentLog.timestamp.minutes = atoi(info);
                     info = strtok_r(NULL, ":", &info_saveptr);
-                    current_timestamp.seconds = atoi(info);
-                    displayTimestamp(current_timestamp);
-                    currentLog.timestamp = current_timestamp;
+                    currentLog.timestamp.seconds = atoi(info);
+                    printf("HERE");
+                    displayTimestamp(currentLog.timestamp);
+                    printf("here");
                     break;
-                } else if (strcmp(info, " Access Type") == 0){
+                } 
+                else if (strcmp(info, " Access Type") == 0)
+                {
+                    printf("Hereareraaerear");
                     info = strtok_r(NULL, ":", &info_saveptr);
                     currentLog.access_type = atoi(info);
                     break;
-                } else if (strcmp(info, " Access denied flag") == 0){
+                } 
+                else if (strcmp(info, " Access denied flag") == 0)
+                {
                     info = strtok_r(NULL, ":", &info_saveptr);
                     currentLog.access_denied_flag = atoi(info);
                     break;
-                } else if (strcmp(info, " File fingerprint") == 0){
+                } 
+                else if (strcmp(info, " File fingerprint") == 0)
+                {
                     info = strtok_r(NULL, ":", &info_saveptr);
                     currentLog.file_fingerprint = info;
-                } else {
+                    break;
+                } 
+                else 
+                {
                     if (strcmp(info, "\n") == 0){
                         break;
                     } else {
@@ -116,9 +134,7 @@ Date getDate(char *dateString){
         printf("Error parsing date");
     }
     return date;
-
 }
-
 
 size_t getAmountOfLogs(FILE *fp){
     size_t count = 0;
@@ -131,7 +147,9 @@ size_t getAmountOfLogs(FILE *fp){
 }
 
 void displayTimestamp(Timestamp stamp){
+    printf("HERE1");
     printf("Timestamp: %02d-%02d-%02d\n", stamp.hours, stamp.minutes, stamp.seconds);
+    printf("HERE2");
 }
 
 void displayDate(Date date){
