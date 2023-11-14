@@ -27,16 +27,15 @@ typedef struct Log {
     Timestamp timestamp;
     int access_type;
     int access_denied_flag;
-    unsigned char *file_fingerprint;
-    size_t fingerprint_size;
+    char *file_fingerprint;
 } Log;
 
-void dislayTimestamp(Timestamp stamp);
+void displayTimestamp(Timestamp stamp);
 void displayDate(Date date);
 void displayFingerprint(unsigned char *bytes, size_t size);
 void displayLog(Log log);
-size_t getAmountOfLogs(FILE *fp, char findChar);
-
+size_t getAmountOfLogs(FILE *fp);
+Date getDate(char *dateString);
 
 
 #endif
