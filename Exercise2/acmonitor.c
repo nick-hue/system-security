@@ -17,26 +17,30 @@ int main(){
     size_t bytes_read = fread(buffer, 1, file_size, f);
 
     printf("Opened Log file:\n%ld\n", bytes_read);
-    
+    printf("Log File:\n%s\n\n\n\n", buffer);
+
+    Log log_array[getAmountOfLogs(f, "\n")];
+
     char *line, *field, *info;
     char* line_saveptr = NULL;
 
     line = strtok_r(buffer, ";", &line_saveptr);
-    printf("LINE: %s\n", line);
 
     char* field_saveptr = NULL;
     char* info_saveptr = NULL;
 
     while (line != NULL) {
-        printf("Log Entry:\n");
-
+        Log currentLog;
         field = strtok_r(line, ",", &field_saveptr);
-        while (field != NULL) {
-            //printf("%s\n", field);
-            
+        while (field != NULL) {           
             info = strtok_r(field, ":", &info_saveptr);
             while(info != NULL){
-                printf("%s ", info);
+                printf("%s->", info);
+                if ((strcmp(info, "UID") == 0) || (strcmp(info, "\nUID") == 0)){
+                    info = strtok_r(NULL, ":", &info_saveptr);
+                    printf("UID --------------> %s", info);
+                    break;
+                }
                 info = strtok_r(NULL, ":", &info_saveptr);
             }
             field = strtok_r(NULL, ",", &field_saveptr);
@@ -74,4 +78,14 @@ void displayLog(Log log){
     printf("Access Type: %d, Access denied flag: %d, File fingerprint: ", log.access_type, log.access_denied_flag);
     displayFingerprint(log.file_fingerprint, log.fingerprint_size);
     printf("\n");
+}
+
+size_t getAmountOfLogs(FILE *fp, char findChar){
+    size_t count = 0;
+    char c;
+    for (c = getc(fp); c != EOF; c = getc(fp)){
+        if (c == findChar)
+            count = count + 1; 
+    }
+    return count;   
 }

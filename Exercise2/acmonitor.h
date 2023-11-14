@@ -35,6 +35,7 @@ void dislayTimestamp(Timestamp stamp);
 void displayDate(Date date);
 void displayFingerprint(unsigned char *bytes, size_t size);
 void displayLog(Log log);
+size_t getAmountOfLogs(FILE *fp, char findChar);
 
 
 
