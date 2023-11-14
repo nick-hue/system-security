@@ -26,10 +26,15 @@ int main(){
     char *line, *field, *info;
     char* line_saveptr = NULL;
 
+    
+
     line = strtok_r(buffer, ";", &line_saveptr);
 
     char* field_saveptr = NULL;
     char* info_saveptr = NULL;
+
+    
+
     Log currentLog;
 
     while (line != NULL) {
