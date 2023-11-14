@@ -2,9 +2,9 @@
 
 int main(){
     printf("Calling the fopen() function for WRITING ...\n");
-    char str[] = "Hello World";
+    char str[] = "Hello World13123123132";
 
-    FILE *f = fopen("write.txt", "w");
+    FILE *f = fopen("write.txt", "a");
     if (!f){
         printf("Error: opening file\n");
         return 1;
