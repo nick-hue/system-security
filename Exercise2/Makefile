@@ -14,9 +14,9 @@ preload:
 preload_w:
 	LD_PRELOAD=./logger.so ./write
 
-preload_ac:
-	gcc -Wall -o acmonitor  acmonitor.c -ldl
-	LD_PRELOAD=./logger.so ./acmonitor
+acmonitor: acmonitor.c 
+	gcc acmonitor.c -o acmonitor
+	./acmonitor
 
 clean:
 	rm -f read logger.so symlink/** file_logging.log write.txt write2.txt

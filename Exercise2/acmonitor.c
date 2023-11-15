@@ -33,8 +33,6 @@ int main(){
     char* field_saveptr = NULL;
     char* info_saveptr = NULL;
 
-    
-
     Log currentLog;
 
     while (line != NULL) {
