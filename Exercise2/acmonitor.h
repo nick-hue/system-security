@@ -30,12 +30,19 @@ typedef struct Log {
     char *file_fingerprint;
 } Log;
 
+typedef enum {
+    PRINT_MALICIOUS,
+    FILE_INFO,
+    HELP,
+    EXIT_MODE
+} Mode;
+
 void displayTimestamp(Timestamp stamp);
 void displayDate(Date date);
 void displayFingerprint(unsigned char *bytes, size_t size);
 void displayLog(Log log);
+Log * getLogArray();
 size_t getAmountOfLogs(FILE *fp);
 Date getDate(char *dateString);
-
 
 #endif

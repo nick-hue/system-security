@@ -1,7 +1,47 @@
 #include <stdio.h>
 #include "acmonitor.h"
+#include <getopt.h>
 
-int main(){
+int main(int argc, char *argv[]){
+    int opt;
+    char *filename;
+    Mode mode;
+
+    while ((opt = getopt(argc, argv, "i:mh")) != -1) {
+        switch (opt) {
+            case 'm':
+                // print malicious users
+                mode = PRINT_MALICIOUS;
+                break;
+            case 'i':
+                // print table of users
+                mode = FILE_INFO;
+                filename = optarg;
+                break;
+            case 'h':
+                // help message 
+                mode = HELP;
+                break;
+            default:
+                mode = EXIT_MODE;
+        }
+    }
+
+    switch(mode){
+        case PRINT_MALICIOUS:
+            printf("Priting malicious users: \n");
+            break;
+        case FILE_INFO:
+            printf("Show file info of file : %s\n", filename);
+            break;
+        case HELP:
+            printf("[-m]: Prints malicious users\n[-i <filename>]: Prints table of users that modified the file given and the number of modifications\n[-h]: Help Message.\n");
+            break;
+        case EXIT_MODE:
+            fprintf(stderr, "Error: while getting mode.\nUse -h flag to show more info about arguments.\n");
+            exit(EXIT_FAILURE);
+    }
+
 
     FILE *f = fopen("file_logging.log", "r");
     if (!f){
@@ -25,8 +65,6 @@ int main(){
 
     char *line, *field, *info;
     char* line_saveptr = NULL;
-
-    
 
     line = strtok_r(buffer, ";", &line_saveptr);
 
@@ -173,4 +211,3 @@ void displayLog(Log log){
     // displayFingerprint(log.file_fingerprint, log.fingerprint_size);
     printf("\n");
 }
-
