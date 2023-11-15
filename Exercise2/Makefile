@@ -19,4 +19,4 @@ preload_ac:
 	LD_PRELOAD=./logger.so ./acmonitor
 
 clean:
-	rm -f read logger.so symlink/** file_logging.log write.txt
+	rm -f read logger.so symlink/** file_logging.log write.txt write2.txt

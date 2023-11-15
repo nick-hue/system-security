@@ -33,6 +33,7 @@ void finalize() {
 
 FILE *fopen(const char* path, const char* mode){
     int access_type = get_access_type(path, mode);
+    printf("access type: %d", access_type);
     FILE* f = (*original_fopen)(path,mode);
 
     if (strcmp(mode, "w")==0 || strcmp(mode, "a")==0){
@@ -128,10 +129,14 @@ void make_log(const char *path, int access_type, int access_flag){
     log_hash_content(hash_fp);
 }
 
+// if file does not exist and we have write mode "w" -> return 0
+// if file exists and read mode "r", exists and write mode "w", exists and append mode "a" -> return 1
 int get_access_type(const char *path, const char *modeString){
-    if ((strcmp(modeString, "w") == 0) && (access(path, F_OK) != 0)) return 0;      
-    if ((strcmp(modeString, "r") == 0) && (access(path, F_OK) == 0)) return 1;                                     
-    if (((strcmp(modeString, "w") == 0) && (access(path, F_OK) == 0)) || ((strcmp(modeString, "a") == 0) && (access(path, F_OK) == 0))) return 1;    
+    printf("path: %s, mode: %s\n", path, modeString);
+    if (((strcmp(modeString, "w") == 0) && (access(path, F_OK) != 0)) || ((strcmp(modeString, "a") == 0) && (access(path, F_OK) != 0))) return 0;      
+    if (((strcmp(modeString, "r") == 0) && (access(path, F_OK) == 0)) || ((strcmp(modeString, "w") == 0) && (access(path, F_OK) == 0)) || ((strcmp(modeString, "a") == 0) && (access(path, F_OK) == 0))) {
+        return 1;
+    }                                     
     return -1;
 }
 
