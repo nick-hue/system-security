@@ -37,10 +37,10 @@ typedef enum {
     EXIT_MODE
 } Mode;
 
-void displayTimestamp(Timestamp stamp);
-void displayDate(Date date);
+void displayTimestamp(Timestamp *stamp);
+void displayDate(Date *date);
 void displayFingerprint(unsigned char *bytes, size_t size);
-void displayLog(Log log);
+void displayLog(Log *log);
 Log * getLogArray();
 size_t getAmountOfLogs(FILE *fp);
 Date getDate(char *dateString);

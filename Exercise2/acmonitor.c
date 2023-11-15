@@ -26,13 +26,48 @@ int main(int argc, char *argv[]){
                 mode = EXIT_MODE;
         }
     }
+    // checking if the user gave no arguments
+    if (optind < 2) {
+        fprintf(stderr, "Error: No arguments provided.\nUse -h flag to show more info about arguments.\n");
+        exit(EXIT_FAILURE);
+    }
+    // checking if the user gave more arguments ./acmonitor -i -m error
+    if ((optind > 2 && mode!=FILE_INFO) || (optind > 3 && mode==FILE_INFO)){
+        fprintf(stderr, "Error: Too many arguments provided.\nNumber of arguments provided: %d\nUse -h flag to show more info about arguments.\n", optind);
+        exit(EXIT_FAILURE);
+    }
 
     switch(mode){
         case PRINT_MALICIOUS:
             printf("Priting malicious users: \n");
+            // 1. get logs
+            // 2. print only the users that have more than 7 access denied 
+            size_t log_array_size;
+            Log *log_array = getLogArray(&log_array_size);
+            
+            printf("AFTER FUNCTION CALL %ld\n", log_array_size);
+
+            printf("\n\nDisplaying logs\n");
+            for (size_t i = 0; i < log_array_size; i++) {
+                displayLog(&log_array[i]);
+            }
             break;
         case FILE_INFO:
             printf("Show file info of file : %s\n", filename);
+            // 1. get logs
+            // 2. pare mono ta logs pou exoun gia log.filename = filename;
+            // 3. print the user_id and the amount of times the user edited the file
+            /*    USER    |   EDIT AMOUNT
+            -----------------------------
+                1000    |   4
+                2000    |   5
+
+            */
+            printf("\tUSER\t|     EDIT AMOUNT\n-------------------------------------\n");
+            for (int i = 0; i < 5; i++){
+                printf("\t%d000\t|\t%d\n", i, i + 1000);
+            }
+            printf("-------------------------------------\n");
             break;
         case HELP:
             printf("[-m]: Prints malicious users\n[-i <filename>]: Prints table of users that modified the file given and the number of modifications\n[-h]: Help Message.\n");
@@ -43,10 +78,17 @@ int main(int argc, char *argv[]){
     }
 
 
+    
+
+    return 0;
+}
+
+Log * getLogArray(size_t *size_of_array){
+
     FILE *f = fopen("file_logging.log", "r");
     if (!f){
         printf("Error: opening file\n");
-        return 1;
+        exit(1);
     }
     
     fseek(f, 0, SEEK_END);
@@ -55,23 +97,25 @@ int main(int argc, char *argv[]){
 
     char *buffer = (char *)malloc(file_size);
     size_t bytes_read = fread(buffer, 1, file_size, f);
+    rewind(f);
 
     printf("Opened Log file:\n%ld\n", bytes_read);
     printf("Log File:\n%s\n\n\n\n", buffer);
 
-    size_t log_array_size = getAmountOfLogs(f);
-    Log log_array[log_array_size];
+    size_t log_array_size = getAmountOfLogs(f)+1;
+    printf("logarraysize : %ld\n", log_array_size);
+    Log *log_array = (Log *)malloc(log_array_size*sizeof(Log));
     size_t log_index = 0;
 
     char *line, *field, *info;
+
     char* line_saveptr = NULL;
-
-    line = strtok_r(buffer, ";", &line_saveptr);
-
     char* field_saveptr = NULL;
     char* info_saveptr = NULL;
 
     Log currentLog;
+
+    line = strtok_r(buffer, ";", &line_saveptr);
 
     while (line != NULL) {
 
@@ -92,7 +136,7 @@ int main(int argc, char *argv[]){
                 {
                     info = strtok_r(NULL, ":", &info_saveptr);
                     printf("FILename ist %s", info);
-                    currentLog.filename = info;
+                    currentLog.filename = strdup(info);
                     break;
                 } 
                 else if (strcmp(info, " Date") == 0)
@@ -100,7 +144,7 @@ int main(int argc, char *argv[]){
                     info = strtok_r(NULL, ":", &info_saveptr);
                     Date current_date = getDate(info);
                     currentLog.date = current_date;
-                    displayDate(current_date);
+                    displayDate(&current_date);
                     break;
                 } 
                 else if (strcmp(info, " Timestamp") == 0)
@@ -112,14 +156,11 @@ int main(int argc, char *argv[]){
                     currentLog.timestamp.minutes = atoi(info);
                     info = strtok_r(NULL, ":", &info_saveptr);
                     currentLog.timestamp.seconds = atoi(info);
-                    printf("HERE");
-                    displayTimestamp(currentLog.timestamp);
-                    printf("here");
+                    displayTimestamp(&currentLog.timestamp);
                     break;
                 } 
                 else if (strcmp(info, " Access Type") == 0)
                 {
-                    printf("Hereareraaerear");
                     info = strtok_r(NULL, ":", &info_saveptr);
                     currentLog.access_type = atoi(info);
                     break;
@@ -133,7 +174,8 @@ int main(int argc, char *argv[]){
                 else if (strcmp(info, " File fingerprint") == 0)
                 {
                     info = strtok_r(NULL, ":", &info_saveptr);
-                    currentLog.file_fingerprint = info;
+                    currentLog.file_fingerprint = strdup(info);
+                    printf("%s", currentLog.file_fingerprint);
                     break;
                 } 
                 else 
@@ -149,21 +191,25 @@ int main(int argc, char *argv[]){
             }
             field = strtok_r(NULL, ",", &field_saveptr);
         }
-        log_array[log_index] = currentLog;
-        log_index++;
+        
         line = strtok_r(NULL, ";", &line_saveptr);
+
+        printf("\n\nAdding current log to the array: \n");
+        displayLog(&currentLog);
+
+        log_array[log_index] = currentLog;
+        
+        displayLog(&log_array[log_index]);
+        log_index++;
     }
-    
-    printf("\n\n\n\n\n\nDisplaying logs\n");
-    for (size_t i = 0; i < log_array_size; i++){
-        displayLog(log_array[i]);
-    }
-    
+
     printf("\n");
     free(buffer);
     fclose(f);
 
-    return 0;
+    *size_of_array = log_array_size;
+
+    return log_array;
 }
 
 Date getDate(char *dateString){
@@ -187,14 +233,12 @@ size_t getAmountOfLogs(FILE *fp){
     return count;   
 }
 
-void displayTimestamp(Timestamp stamp){
-    printf("HERE1");
-    printf("Timestamp: %02d-%02d-%02d\n", stamp.hours, stamp.minutes, stamp.seconds);
-    printf("HERE2");
+void displayTimestamp(Timestamp *stamp){
+    printf("Timestamp: %02d-%02d-%02d\n", stamp->hours, stamp->minutes, stamp->seconds);
 }
 
-void displayDate(Date date){
-    printf("Date: %02d-%02d-%d\n", date.day, date.month, date.year);
+void displayDate(Date *date){
+    printf("Date: %02d-%02d-%d\n", date->day, date->month, date->year);
 }
 
 void displayFingerprint(unsigned char *bytes, size_t size){
@@ -203,11 +247,10 @@ void displayFingerprint(unsigned char *bytes, size_t size){
     }
 }
 
-void displayLog(Log log){
-    printf("LOG: \nUID: %d, Filename: %s", log.user_id, log.filename);
-    displayDate(log.date);
-    displayTimestamp(log.timestamp);
-    printf("Access Type: %d, Access denied flag: %d, File fingerprint: %s", log.access_type, log.access_denied_flag, log.file_fingerprint);
-    // displayFingerprint(log.file_fingerprint, log.fingerprint_size);
+void displayLog(Log *log){
+    printf("LOG=> UID: %d, Filename: %s, ", log->user_id, log->filename);
+    printf("Date: %02d/%02d/%d, ", log->date.day, log->date.month, log->date.year);
+    printf("Timestamp: %02d:%02d:%02d, ", log->timestamp.hours, log->timestamp.minutes, log->timestamp.seconds);
+    printf("Access Type: %d, Access denied flag: %d, File fingerprint: %s", log->access_type, log->access_denied_flag, log->file_fingerprint);
     printf("\n");
 }
