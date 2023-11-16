@@ -37,20 +37,26 @@ int main(int argc, char *argv[]){
         exit(EXIT_FAILURE);
     }
 
+    size_t log_array_size;
+    Log *log_array;
+
     switch(mode){
         case PRINT_MALICIOUS:
             printf("Priting malicious users: \n");
             // 1. get logs
-            // 2. print only the users that have more than 7 access denied 
-            size_t log_array_size;
-            Log *log_array = getLogArray(&log_array_size);
+            // ERROR : to teleutaio log sto log array einai duplicate tou proteleutaiou
+            log_array = getLogArray(&log_array_size);
             
             printf("AFTER FUNCTION CALL %ld\n", log_array_size);
-
+            
             printf("\n\nDisplaying logs\n");
-            for (size_t i = 0; i < log_array_size; i++) {
+            for (size_t i = 0; i < log_array_size-1; i++) {
                 displayLog(&log_array[i]);
             }
+
+            // 2. print only the users that have more than 7 access denied 
+
+            
             break;
         case FILE_INFO:
             printf("Show file info of file : %s\n", filename);
@@ -63,6 +69,14 @@ int main(int argc, char *argv[]){
                 2000    |   5
 
             */
+            log_array = getLogArray(&log_array_size);
+            
+            printf("AFTER FUNCTION CALL %ld\n", log_array_size);
+            printf("\n\nDisplaying logs\n");
+            for (size_t i = 0; i < log_array_size-1; i++) {
+                displayLog(&log_array[i]);
+            }
+
             printf("\tUSER\t|     EDIT AMOUNT\n-------------------------------------\n");
             for (int i = 0; i < 5; i++){
                 printf("\t%d000\t|\t%d\n", i, i + 1000);
@@ -76,9 +90,6 @@ int main(int argc, char *argv[]){
             fprintf(stderr, "Error: while getting mode.\nUse -h flag to show more info about arguments.\n");
             exit(EXIT_FAILURE);
     }
-
-
-    
 
     return 0;
 }
