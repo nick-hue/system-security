@@ -21,13 +21,10 @@ void log_hash_content(FILE *hash_fp);
 
 /*
     Returns the access type of the current file
+    - if file does not exist and we have write mode "w" or "w+" or "a" or "a+"-> return 0
+    - if file exists and read mode "r", exists and write mode "w" or "w+", exists and append mode "a" or "a+" -> return 1
 */
 int get_access_type(const char *path, const char *modeString);
-
-/*
-    Returns the flag if the access of the file was denied(1) or not(0).
-*/
-int get_access_denied_flag(const char * path, int access_type);
 
 /*
     Makes a symlink of a file

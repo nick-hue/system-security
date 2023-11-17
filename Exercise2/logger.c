@@ -40,8 +40,17 @@ FILE *fopen(const char* path, const char* mode){
         sprintf(sym_path, "symlink/symlink_file_%d", fileno(f));
         make_symlink(path, sym_path);
     }
+    int access_denied_flag;
 
-    int access_denied_flag = get_access_denied_flag(path, access_type);
+    if ((strcmp(mode, "w") == 0) || (strcmp(mode, "w+") == 0) || (strcmp(mode, "a") == 0) || (strcmp(mode, "a+") == 0)){
+        access_denied_flag = -access(path, W_OK);
+    } else if (strcmp(mode, "r") == 0){
+        access_denied_flag = -access(path, R_OK);
+    } else {
+        printf("Should not be here maybe mode= 'x'\n");
+        access_denied_flag = 999;
+    }
+
     // open the file to get its contents 
     make_log(path, access_type, access_denied_flag);
     
@@ -128,25 +137,12 @@ void make_log(const char *path, int access_type, int access_flag){
     log_hash_content(hash_fp);
 }
 
-// if file does not exist and we have write mode "w" -> return 0
-// if file exists and read mode "r", exists and write mode "w", exists and append mode "a" -> return 1
 int get_access_type(const char *path, const char *modeString){
-    if (((strcmp(modeString, "w") == 0) && (access(path, F_OK) != 0)) || ((strcmp(modeString, "a") == 0) && (access(path, F_OK) != 0))) return 0;      
-    if (((strcmp(modeString, "r") == 0) && (access(path, F_OK) == 0)) || ((strcmp(modeString, "w") == 0) && (access(path, F_OK) == 0)) || ((strcmp(modeString, "a") == 0) && (access(path, F_OK) == 0))) {
+    if (((strcmp(modeString, "w") == 0) || (strcmp(modeString, "w+") == 0) || (strcmp(modeString, "a") == 0) || (strcmp(modeString, "a+") == 0)) && (access(path, F_OK) != 0)) return 0;      
+    if (((strcmp(modeString, "r") == 0) || (strcmp(modeString, "w") == 0) || (strcmp(modeString, "w+") == 0) || (strcmp(modeString, "a") == 0) || (strcmp(modeString, "a+") == 0)) && (access(path, F_OK) == 0)) {
         return 1;
     }                                     
     return -1;
-}
-
-int get_access_denied_flag(const char * path, int access_type){
-    if (access_type==0 || access_type==1)
-    {
-        return -access(path, W_OK);
-    }
-    else
-    {
-        return -1;
-    }
 }
 
 void make_symlink(const char *target, const char *sym_link_path){

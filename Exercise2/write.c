@@ -22,6 +22,10 @@ int main(){
     fclose(f);
     fclose(f2);
 
+    f = fopen("write.txt", "a");
+    fwrite(str, 1, sizeof(str) - 1, f);
+    fclose(f);
+
     printf("Successfully opened file.\n");
     return 0;
 }
