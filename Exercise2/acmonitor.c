@@ -1,6 +1,4 @@
-#include <stdio.h>
 #include "acmonitor.h"
-#include <getopt.h>
 
 int main(int argc, char *argv[]){
     int opt;

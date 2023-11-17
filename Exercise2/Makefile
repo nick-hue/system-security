@@ -1,22 +1,21 @@
 # This is a simple Makefile example with a 'clean' target
 
-all: read logger preload
-
-read:
-	gcc -Wall -o read  read.c
+all: logger acmonitor test_aclog
 
 logger:
 	gcc -Wall -fPIC -shared -o logger.so logger.c -ldl -lcrypto
 
 preload:
-	LD_PRELOAD=./logger.so ./read
+	LD_PRELOAD=./logger.so ./
 
-preload_w:
-	LD_PRELOAD=./logger.so ./write
-
-acmonitor: acmonitor.c 
+acmonitor: 
 	gcc acmonitor.c -o acmonitor
-	./acmonitor
+
+test_aclog: test_aclog.c 
+	gcc test_aclog.c -o test_aclog
+
+run: logger.so test_aclog
+	LD_PRELOAD=./logger.so ./test_aclog
 
 clean:
-	rm -f read logger.so symlink/** file_logging.log write.txt write2.txt
+	rm -rf logger.so symlink/** file_logging.log *.txt test_aclog acmonitor

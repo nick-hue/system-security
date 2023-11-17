@@ -7,6 +7,7 @@
 #include <time.h>
 #include <string.h>
 #include <stdlib.h>
+#include <getopt.h>
 
 typedef struct Date {
     int day;
