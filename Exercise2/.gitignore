@@ -1,2 +1,4 @@
 symlink
-test*
+test*.txt
+test*.c
+test2
