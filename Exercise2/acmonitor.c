@@ -58,31 +58,16 @@ int main(int argc, char *argv[]){
             break;
         case FILE_INFO:
             printf("Show file info of file : %s\n", filename);
-            // 1. get logs
-            // 2. pare mono ta logs pou exoun gia log.filename = filename;
-            // 3. print the user_id and the amount of times the user edited the file
-            /*    USER    |   EDIT AMOUNT
-            -----------------------------
-                1000    |   4
-                2000    |   5
-
-            */
+            
             log_array = getLogArray(&log_array_size);
             
-            /*printf("AFTER FUNCTION CALL %ld\n", log_array_size);
-            printf("\n\nDisplaying logs\n");
-            for (size_t i = 0; i < log_array_size-1; i++) {
-                displayLog(&log_array[i]);
-            }*/
-
-            Log *logs = (Log *)malloc(sizeof(Log));
+            Log *logs = (Log *)malloc(sizeof(Log)); // logs array for which have the filename
             if (logs == NULL) {
                 perror("Memory allocation error");
                 return 1;
             }
             size_t size = 1;
 
-            printf("\nmodified logs\n");
             for (size_t i = 0; i < log_array_size-1; i++){
                 if (strcmp(log_array[i].filename, filename) == 0){
                     printf("size = %ld\n", size*sizeof(Log));
@@ -102,31 +87,33 @@ int main(int argc, char *argv[]){
                     }
                 }
             }
+        
             size--;
             int uniqueUIDS[] = {1000,1001};
-            int *unique_count = (int *)malloc(sizeof(int)*(sizeof(uniqueUIDS)/sizeof(uniqueUIDS[0])));
+            int *unique_count = (int *)calloc(sizeof(uniqueUIDS)/sizeof(uniqueUIDS[0]), sizeof(int));
+
             if (unique_count == NULL) {
                 perror("Memory allocation error");
                 return 1;
             }
 
-            for (int j = 0; j < sizeof(uniqueUIDS)/sizeof(uniqueUIDS[0]); j++){
-                unique_count[j] = 0;
+            for (int j = 0; j < sizeof(uniqueUIDS)/sizeof(uniqueUIDS[0]); j++){ 
+                //unique_count[j] = 0;
                 for (size_t i = 0; i < size; i++){
                     if (uniqueUIDS[j] == logs[i].user_id){
                         displayLog(&logs[i]);
-                        if (isUnique(logs, i, logs[i].file_fingerprint, uniqueUIDS[j])) {
+                        if (isUnique(logs, i, logs[i].file_fingerprint)) {
                             unique_count[j]++;
                         }
                     }
                 }
-                printf("-------------------------------------\n");
+            printf("-----------------------------------------\n");
             }
-            printf("\tUSER\t|     EDIT AMOUNT\n-------------------------------------\n");
+            printf("-----------------------------------------\n|\tUSER\t|     EDIT AMOUNT\t|\n-----------------------------------------\n");
             for (size_t i = 0; i < sizeof(uniqueUIDS)/sizeof(uniqueUIDS[0]); i++){
-                printf("\t%d\t|\t%d\n", uniqueUIDS[i], unique_count[i]);
+                printf("|\t%d\t|\t%d\t\t|\n", uniqueUIDS[i], unique_count[i]);
             }
-            printf("-------------------------------------\n");
+            printf("-----------------------------------------\n");
 
             free(logs);
             free(unique_count);
@@ -288,9 +275,9 @@ size_t getAmountOfLogs(FILE *fp){
     return count;   
 }
 
-int isUnique(Log *logs, int currentIndex, const char *fingerprint, int UID){
+int isUnique(Log *logs, int currentIndex, const char *fingerprint){
     for (int i = 0; i < currentIndex; i++) {
-        if ((strcmp(logs[i].file_fingerprint, fingerprint) == 0) && (logs[i].user_id == UID)) {
+        if ((strcmp(logs[i].file_fingerprint, fingerprint) == 0)) {
             return 0; // Not unique
         }
     }
