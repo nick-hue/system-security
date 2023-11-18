@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <dlfcn.h>
 #include <unistd.h>
+#include <sys/types.h>
 #include <time.h>
 #include <string.h>
 #include <openssl/evp.h>

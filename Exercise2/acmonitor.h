@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <dlfcn.h>
 #include <unistd.h>
+#include <sys/types.h>
 #include <time.h>
 #include <string.h>
 #include <stdlib.h>
@@ -22,7 +23,7 @@ typedef struct Timestamp {
 } Timestamp;
 
 typedef struct Log {
-    int user_id;// change to uid_t
+    uid_t user_id;// change to uid_t
     char *filename;
     Date date;
     Timestamp timestamp;

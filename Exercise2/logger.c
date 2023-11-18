@@ -93,9 +93,10 @@ size_t fwrite(const void *ptr, size_t size_of_element, size_t number_of_elements
 void log_hash_content(FILE *hash_fp){
     if (!hash_fp) {
         printf("Error: while trying to get file pointer to read contents from file.\n");
-        char tmp[4] = " ;\n\0";
-        fprintf(fout, "%s", tmp); // the fprintf function runs the fwrite function if it does not take the "%s" argument
-        exit(1);
+        //char tmp[4] = " ;\n\0";
+        //fprintf(fout, "%s", tmp); // the fprintf function runs the fwrite function if it does not take the "%s" argument
+        return;
+        //exit(1);
     }
 
     size_t file_size = getSizeOfFile(hash_fp);     // getting the size of the file to hash

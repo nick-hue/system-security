@@ -1,5 +1,3 @@
-# This is a simple Makefile example with a 'clean' target
-
 all: logger acmonitor test_aclog
 
 logger:
