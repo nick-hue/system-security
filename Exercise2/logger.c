@@ -44,7 +44,7 @@ FILE *fopen(const char* path, const char* mode){
 
     if ((strcmp(mode, "w") == 0) || (strcmp(mode, "w+") == 0) || (strcmp(mode, "a") == 0) || (strcmp(mode, "a+") == 0)){
         access_denied_flag = -access(path, W_OK);
-    } else if (strcmp(mode, "r") == 0){
+    } else if ((strcmp(mode, "r") == 0) || (strcmp(mode, "r+") == 0)){
         access_denied_flag = -access(path, R_OK);
     } else {
         printf("Should not be here maybe mode= 'x'\n");
@@ -140,7 +140,7 @@ void make_log(const char *path, int access_type, int access_flag){
 
 int get_access_type(const char *path, const char *modeString){
     if (((strcmp(modeString, "w") == 0) || (strcmp(modeString, "w+") == 0) || (strcmp(modeString, "a") == 0) || (strcmp(modeString, "a+") == 0)) && (access(path, F_OK) != 0)) return 0;      
-    if (((strcmp(modeString, "r") == 0) || (strcmp(modeString, "w") == 0) || (strcmp(modeString, "w+") == 0) || (strcmp(modeString, "a") == 0) || (strcmp(modeString, "a+") == 0)) && (access(path, F_OK) == 0)) {
+    if (((strcmp(modeString, "r") == 0) || (strcmp(modeString, "r+") == 0) || (strcmp(modeString, "w") == 0) || (strcmp(modeString, "w+") == 0) || (strcmp(modeString, "a") == 0) || (strcmp(modeString, "a+") == 0)) && (access(path, F_OK) == 0)) {
         return 1;
     }                                     
     return -1;
