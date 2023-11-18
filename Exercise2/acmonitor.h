@@ -8,6 +8,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#define MAX_SIZE 8
+
 typedef struct Date {
     int day;
     int month;
@@ -30,6 +32,11 @@ typedef struct Log {
     char *file_fingerprint;
 } Log;
 
+typedef struct Mal_User {
+    int user_id;
+    char* filename[MAX_SIZE]; // = (char*)malloc(8*sizeof(char));
+} Mal_User;
+
 typedef enum {
     PRINT_MALICIOUS,
     FILE_INFO,
@@ -44,5 +51,7 @@ void displayLog(Log *log);
 Log * getLogArray();
 size_t getAmountOfLogs(FILE *fp);
 Date getDate(char *dateString);
+size_t find_in_struct(Mal_User *mal, int intTofind, size_t size);
+size_t find_in_array(char* fl[], char* stringTofind, size_t size);
 
 #endif
