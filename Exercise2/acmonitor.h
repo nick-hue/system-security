@@ -46,5 +46,6 @@ void displayLog(Log *log);
 Log * getLogArray();
 size_t getAmountOfLogs(FILE *fp);
 Date getDate(char *dateString);
+int isUnique(Log *logs, int currentIndex, const char *fingerprint, int UID);
 
 #endif

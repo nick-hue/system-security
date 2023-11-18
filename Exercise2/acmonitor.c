@@ -69,17 +69,67 @@ int main(int argc, char *argv[]){
             */
             log_array = getLogArray(&log_array_size);
             
-            printf("AFTER FUNCTION CALL %ld\n", log_array_size);
+            /*printf("AFTER FUNCTION CALL %ld\n", log_array_size);
             printf("\n\nDisplaying logs\n");
             for (size_t i = 0; i < log_array_size-1; i++) {
                 displayLog(&log_array[i]);
+            }*/
+
+            Log *logs = (Log *)malloc(sizeof(Log));
+            if (logs == NULL) {
+                perror("Memory allocation error");
+                return 1;
+            }
+            size_t size = 1;
+
+            printf("\nmodified logs\n");
+            for (size_t i = 0; i < log_array_size-1; i++){
+                if (strcmp(log_array[i].filename, filename) == 0){
+                    printf("size = %ld\n", size*sizeof(Log));
+                    if (size == 1){
+                        logs[0] = log_array[i];
+                        size++;
+                    } else {
+                        Log *temp = (Log *)realloc(logs, size * sizeof(Log));                    
+                        if (!temp) {
+                            perror("error with realloc");
+                            free(logs);
+                            return 1;
+                        }
+                        logs = temp;
+                        logs[size-1] = log_array[i];
+                        size++;
+                    }
+                }
+            }
+            size--;
+            int uniqueUIDS[] = {1000,1001};
+            int *unique_count = (int *)malloc(sizeof(int)*(sizeof(uniqueUIDS)/sizeof(uniqueUIDS[0])));
+            if (unique_count == NULL) {
+                perror("Memory allocation error");
+                return 1;
             }
 
+            for (int j = 0; j < sizeof(uniqueUIDS)/sizeof(uniqueUIDS[0]); j++){
+                unique_count[j] = 0;
+                for (size_t i = 0; i < size; i++){
+                    if (uniqueUIDS[j] == logs[i].user_id){
+                        displayLog(&logs[i]);
+                        if (isUnique(logs, i, logs[i].file_fingerprint, uniqueUIDS[j])) {
+                            unique_count[j]++;
+                        }
+                    }
+                }
+                printf("-------------------------------------\n");
+            }
             printf("\tUSER\t|     EDIT AMOUNT\n-------------------------------------\n");
-            for (int i = 0; i < 5; i++){
-                printf("\t%d000\t|\t%d\n", i, i + 1000);
+            for (size_t i = 0; i < sizeof(uniqueUIDS)/sizeof(uniqueUIDS[0]); i++){
+                printf("\t%d\t|\t%d\n", uniqueUIDS[i], unique_count[i]);
             }
             printf("-------------------------------------\n");
+
+            free(logs);
+            free(unique_count);
             break;
         case HELP:
             printf("[-m]: Prints malicious users\n[-i <filename>]: Prints table of users that modified the file given and the number of modifications\n[-h]: Help Message.\n");
@@ -141,7 +191,7 @@ Log * getLogArray(size_t *size_of_array){
                 {
                     info = strtok_r(NULL, ":", &info_saveptr);
                     //printf("FILename ist %s", info);
-                    currentLog.filename = strdup(info);
+                    currentLog.filename = strdup(info) + 1; // makes the filename from " testfile.txt" -> "testfile.txt"
                     break;
                 } 
                 else if (strcmp(info, " Date") == 0)
@@ -149,7 +199,7 @@ Log * getLogArray(size_t *size_of_array){
                     info = strtok_r(NULL, ":", &info_saveptr);
                     Date current_date = getDate(info);
                     currentLog.date = current_date;
-                    displayDate(&current_date);
+                    //displayDate(&current_date);
                     break;
                 } 
                 else if (strcmp(info, " Timestamp") == 0)
@@ -161,7 +211,7 @@ Log * getLogArray(size_t *size_of_array){
                     currentLog.timestamp.minutes = atoi(info);
                     info = strtok_r(NULL, ":", &info_saveptr);
                     currentLog.timestamp.seconds = atoi(info);
-                    displayTimestamp(&currentLog.timestamp);
+                    //displayTimestamp(&currentLog.timestamp);
                     break;
                 } 
                 else if (strcmp(info, " Access Type") == 0)
@@ -189,7 +239,7 @@ Log * getLogArray(size_t *size_of_array){
                         break;
                     } else {
                         printf("Error: while trying to get data for making of the log.\n");
-                        exit(1);
+                        //exit(1);
                     }                    
                 }
                 info = strtok_r(NULL, ":", &info_saveptr);
@@ -204,7 +254,7 @@ Log * getLogArray(size_t *size_of_array){
 
         log_array[log_index] = currentLog;
         
-        displayLog(&log_array[log_index]);
+        //displayLog(&log_array[log_index]);
         log_index++;
     }
 
@@ -236,6 +286,15 @@ size_t getAmountOfLogs(FILE *fp){
             count = count + 1; 
     }
     return count;   
+}
+
+int isUnique(Log *logs, int currentIndex, const char *fingerprint, int UID){
+    for (int i = 0; i < currentIndex; i++) {
+        if ((strcmp(logs[i].file_fingerprint, fingerprint) == 0) && (logs[i].user_id == UID)) {
+            return 0; // Not unique
+        }
+    }
+    return 1; // Unique
 }
 
 void displayTimestamp(Timestamp *stamp){
