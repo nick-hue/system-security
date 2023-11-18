@@ -51,7 +51,5 @@ void displayLog(Log *log);
 Log * getLogArray();
 size_t getAmountOfLogs(FILE *fp);
 Date getDate(char *dateString);
-size_t find_in_struct(Mal_User *mal, int intTofind, size_t size);
-size_t find_in_array(char* fl[], char* stringTofind, size_t size);
 
 #endif

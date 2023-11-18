@@ -52,7 +52,7 @@ int main(int argc, char *argv[]){
             for (size_t i = 0; i < log_array_size; i++) {
                 displayLog(&log_array[i]);
             }
-            printf("HERE----------");
+           // printf("HERE----------");
             // 2. print only the users that have more than 7 access denied 
             size_t filenm_index = 0;
             int array_size =0 ;
@@ -64,34 +64,43 @@ int main(int argc, char *argv[]){
                 fprintf(stderr, "Memory allocation failed\n");
                 exit(EXIT_FAILURE);
             }
-
-           /*  // Initialize malUser_array
-            for (int i = 0; i < log_array_size; ++i) {
-                malUser_array[i] = 0; // You can initialize with a specific value
-            }*/
-
-
-               /* 
+                
             for (size_t i = 0; i < log_array_size; i++){
                 if(log_array[i].access_denied_flag == 1){
                     int cur_uid = log_array[i].user_id;
                     char* cur_filenm = log_array[i].filename;
                     
-                    size_t mal_index = find_in_struct(possible_MalUsers, cur_uid, log_array_size);     //index of malUser_array
+                    size_t mal_index = 0;     //index of malUser_array
+
+                    for(size_t i = 0; i < log_array_size; i++){
+                        if(possible_MalUsers[i].user_id == 0){              //returns the first empty position
+                            mal_index = i;
+                            break;
+                        }else if (possible_MalUsers[i].user_id == cur_uid){ 
+                            mal_index = i;
+                            break;
+                        }
+                    }
 
                     //If user not recorded, add him in the struct
-                    if( possible_MalUsers[mal_index].user_id == 0){ //check for error &
+                    if( possible_MalUsers[mal_index].user_id == 0){ 
                         possible_MalUsers[mal_index].user_id = cur_uid;
                         //add filename
                         possible_MalUsers[mal_index].filename[0] = cur_filenm;
-
-                        for (int i = 0; i < 8; ++i) {
-                             possible_MalUsers[mal_index].filename[i] = '\0'; // You can initialize with a specific value
-                        }
-                        //alloc fakelo
                     }else{
-                        size_t filenm_index = find_in_array(possible_MalUsers[mal_index].filename, cur_filenm, 8);
-                        if (filenm_index < 8){                              //We haven't exceeded the 7 unpermitted accesses
+                        size_t filenm_index = 0;
+                        for(size_t i = 0; i < 8; i++){
+                            if(possible_MalUsers[mal_index].filename[i] == NULL){       //give the first empty position
+                                filenm_index = i;
+                                break;
+                            }
+                            else if(strcmp(possible_MalUsers[mal_index].filename[i],cur_filenm) == 0){    
+                                filenm_index = i;
+                                break;
+                            }
+                        }
+
+                        if (filenm_index < 7){  //We haven't exceeded the 7 unpermitted accesses
                             if(possible_MalUsers[mal_index].filename[filenm_index] == NULL){//
                                 possible_MalUsers[mal_index].filename[filenm_index] = cur_filenm;
                             }else{  //Already recorded this file
@@ -100,13 +109,7 @@ int main(int argc, char *argv[]){
                         }else{
                             if(malUser_array[0] == 0){
                                 malUser_array[0] = cur_uid;
-                            }else{
-                                //malUser_array = realloc(malUser_array, (array_size + 1) * sizeof(int));
-
-                                /*if (malUser_array == NULL ){
-                                    fprintf(stderr, "Memory allocation failed\n");
-                                    exit(EXIT_FAILURE);
-                                }          
+                            }else{   
                                 array_size++;
                                 if(array_size > log_array_size){
                                     malUser_array = realloc(malUser_array, (array_size + 1) * sizeof(int));
@@ -118,11 +121,11 @@ int main(int argc, char *argv[]){
                   }
             }
 
-            printf("\n\nDisplaying Malicious Users");
-            for (size_t i = 0; i < array_size; i++) {
-                printf("\nUser Id: %d", malUser_array[i]);
+            printf("\n\nDisplaying Malicious Users\n");
+            for (size_t i = 0; i < 2; i++) {
+                printf("User Id: %d\n", malUser_array[i]);
             }
-            */
+
             free(possible_MalUsers);
             free(malUser_array);
 
@@ -216,7 +219,7 @@ Log * getLogArray(size_t *size_of_array){
                 {
                     info = strtok_r(NULL, ":", &info_saveptr);
                     //printf("FiLename is: %s", info);
-                    currentLog.filename = strdup(info);
+                    currentLog.filename = strdup(info)+1;
                     break;
                 } 
                 else if (strcmp(info, " Date") == 0)
@@ -290,26 +293,6 @@ Log * getLogArray(size_t *size_of_array){
     *size_of_array = log_array_size;
 
     return log_array;
-}
-
-size_t find_in_struct(Mal_User *mal, int stringTofind, size_t size){
-    for(size_t i = 0; i < size; i++){
-        if(mal[i].user_id == stringTofind){
-            return i;
-        }else if (mal[i].user_id == 0){   //returns the first empty position---check the '\0'
-            return i;
-        }
-    }
-}
-
-size_t find_in_array(char* fl[], char* stringTofind, size_t size){
-    for(size_t i = 0; i < size; i++){
-        if(strcmp(fl[i],stringTofind) == 0){    
-            return(i);
-        }else if (fl[i] == NULL){                //change based on pointers
-            return i;
-        }
-    }
 }
 
 Date getDate(char *dateString){
