@@ -108,11 +108,7 @@ Log * getLogArray(size_t *size_of_array){
     size_t bytes_read = fread(buffer, 1, file_size, f);
     rewind(f);
 
-    printf("Opened Log file:\n%ld\n", bytes_read);
-    printf("Log File:\n%s\n\n\n\n", buffer);
-
     size_t log_array_size = getAmountOfLogs(f)+1;
-    printf("logarraysize : %ld\n", log_array_size);
     Log *log_array = (Log *)malloc(log_array_size*sizeof(Log));
     size_t log_index = 0;
 
@@ -133,18 +129,18 @@ Log * getLogArray(size_t *size_of_array){
         while (field != NULL) {           
             info = strtok_r(field, ":", &info_saveptr);
             while(info != NULL){
-                printf("%s->", info);
+                //printf("%s->", info);
                 if ((strcmp(info, "UID") == 0) || (strcmp(info, "\nUID") == 0))
                 {
                     info = strtok_r(NULL, ":", &info_saveptr);
-                    printf("UID --------------> %s", info);
+                    //printf("UID --------------> %s", info);
                     currentLog.user_id = atoi(info);
                     break;
                 } 
                 else if (strcmp(info, " Filename") == 0) 
                 {
                     info = strtok_r(NULL, ":", &info_saveptr);
-                    printf("FILename ist %s", info);
+                    //printf("FILename ist %s", info);
                     currentLog.filename = strdup(info);
                     break;
                 } 
@@ -184,7 +180,7 @@ Log * getLogArray(size_t *size_of_array){
                 {
                     info = strtok_r(NULL, ":", &info_saveptr);
                     currentLog.file_fingerprint = strdup(info);
-                    printf("%s", currentLog.file_fingerprint);
+                    //printf("%s", currentLog.file_fingerprint);
                     break;
                 } 
                 else 
@@ -203,8 +199,8 @@ Log * getLogArray(size_t *size_of_array){
         
         line = strtok_r(NULL, ";", &line_saveptr);
 
-        printf("\n\nAdding current log to the array: \n");
-        displayLog(&currentLog);
+        //printf("\n\nAdding current log to the array: \n");
+        //displayLog(&currentLog);
 
         log_array[log_index] = currentLog;
         
@@ -225,7 +221,7 @@ Date getDate(char *dateString){
     Date date;
 
     if (sscanf(dateString, "%d/%d/%d", &date.day, &date.month, &date.year) == 3) {
-        printf("Good date");
+        //printf("Good date");
     } else {
         printf("Error parsing date");
     }
