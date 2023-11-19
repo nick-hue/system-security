@@ -1,5 +1,5 @@
-By running the Makefile with: m
-ake clean 
+By running the Makefile with: 
+make clean 
 make 
 make run
 
