@@ -1,4 +1,3 @@
 symlink
 test*.txt
-test*.c
-test2
+*.exe
