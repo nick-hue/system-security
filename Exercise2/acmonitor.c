@@ -49,10 +49,7 @@ int main(int argc, char *argv[]){
             
             printf("AFTER FUNCTION CALL %ld\n", log_array_size);
             
-            printf("\n\nDisplaying logs\n");
-            for (size_t i = 0; i < log_array_size; i++) {
-                displayLog(&log_array[i]);
-            }
+            
           
             // 2. print only the users that have more than 7 access denied 
             size_t filenm_index = 0;
@@ -210,7 +207,7 @@ Log * getLogArray(size_t *size_of_array){
         while (field != NULL) {           
             info = strtok_r(field, ":", &info_saveptr);
             while(info != NULL){
-                printf("%s->", info);
+                //printf("%s->", info);
                 if ((strcmp(info, "UID") == 0) || (strcmp(info, "\nUID") == 0))
                 {
                     info = strtok_r(NULL, ":", &info_saveptr);
@@ -266,6 +263,8 @@ Log * getLogArray(size_t *size_of_array){
                 } 
                 else 
                 {
+                    break;
+                    printf("inf = %s", info);
                     if (strcmp(info, "\n") == 0){
                         break;
                     } else {
@@ -302,7 +301,7 @@ Date getDate(char *dateString){
     Date date;
 
     if (sscanf(dateString, "%d/%d/%d", &date.day, &date.month, &date.year) == 3) {
-        printf("Good date");
+        //printf("Good date");
     } else {
         printf("Error parsing date");
     }
