@@ -62,7 +62,7 @@ FILE *fopen(const char* path, const char* mode){
 
 size_t fwrite(const void *ptr, size_t size_of_element, size_t number_of_elements, FILE *stream){   
     
-    printf("Used custom fwrite...\n");
+    //printf("Used custom fwrite...\n");
     size_t (*original_fwrite)(const void*, size_t, size_t, FILE *);
     original_fwrite = dlsym(RTLD_NEXT, "fwrite");
     size_t written = (*original_fwrite)(ptr, size_of_element, number_of_elements, stream);
@@ -74,10 +74,13 @@ size_t fwrite(const void *ptr, size_t size_of_element, size_t number_of_elements
 
     targetPath = get_target_path_by_symlink(symlinkPath);
 
-    if (remove(symlinkPath) == 0)
-        printf("Simlink deleted successfully\n");
-    else
+    if (remove(symlinkPath) == 0){
+        //("Simlink deleted successfully\n");
+    }
+    else{
         printf("Unable to delete the file\n");
+        exit(1);
+    }
 
     int access_type = 2;
     int access_denied_flag = -access(targetPath, W_OK); // if 0->0, if -1->1
@@ -92,7 +95,7 @@ size_t fwrite(const void *ptr, size_t size_of_element, size_t number_of_elements
 
 void log_hash_content(FILE *hash_fp){
     if (!hash_fp) {
-        printf("Error: while trying to get file pointer to read contents from file.\n");
+        //printf("Error: while trying to get file pointer to read contents from file.\n");
         //char tmp[4] = " ;\n\0";
         //fprintf(fout, "%s", tmp); // the fprintf function runs the fwrite function if it does not take the "%s" argument
         return;
@@ -148,11 +151,11 @@ int get_access_type(const char *path, const char *modeString){
 
 void make_symlink(const char *target, const char *sym_link_path){
     if (symlink(target, sym_link_path) == -1) {
-        printf("file: %s\n", target);
+        //printf("file: %s\n", target);
         perror("symlink failed");
         exit(1);
     } else {
-        printf("Symlink created: %s -> %s\n", sym_link_path, target);
+        //printf("Symlink created: %s -> %s\n", sym_link_path, target);
     }
 }
 
@@ -169,7 +172,7 @@ char * get_target_path_by_symlink(const char *symlinkPath){
 
     targetPath[len] = '\0';
 
-    printf("The symlink '%s' points to '%s'\n", symlinkPath, targetPath);
+    //printf("The symlink '%s' points to '%s'\n", symlinkPath, targetPath);
     return targetPath;
 }
 
