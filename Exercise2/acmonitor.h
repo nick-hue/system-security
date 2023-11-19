@@ -44,9 +44,10 @@ void displayDate(Date *date);
 void displayFingerprint(unsigned char *bytes, size_t size);
 void displayLog(Log *log);
 Log * getLogArray();
+Log * getLogsByFilename(Log *log_array, size_t log_array_size, char *filename, size_t *size_of_array);
 size_t getAmountOfLogs(FILE *fp);
 Date getDate(char *dateString);
-int isUnique(Log *logs, int currentIndex, const char *fingerprint);
-void printTable(int uniqueUIDS[], int *unique_count);
+int isUniqueFingerprint(Log *logs, int currentIndex, const char *fingerprint);
+int* getUniqueUIDS(Log *logs, size_t logCount, size_t *uniqueUidCount);
 
 #endif

@@ -60,63 +60,41 @@ int main(int argc, char *argv[]){
             printf("Show file info of file : %s\n", filename);
             
             log_array = getLogArray(&log_array_size);
-            
-            Log *logs = (Log *)malloc(sizeof(Log)); // logs array for which have the filename
-            if (logs == NULL) {
-                perror("Memory allocation error");
-                return 1;
-            }
-            size_t size = 1;
 
-            for (size_t i = 0; i < log_array_size-1; i++){
-                if (strcmp(log_array[i].filename, filename) == 0){
-                    printf("size = %ld\n", size*sizeof(Log));
-                    if (size == 1){
-                        logs[0] = log_array[i];
-                        size++;
-                    } else {
-                        Log *temp = (Log *)realloc(logs, size * sizeof(Log));                    
-                        if (!temp) {
-                            perror("error with realloc");
-                            free(logs);
-                            return 1;
-                        }
-                        logs = temp;
-                        logs[size-1] = log_array[i];
-                        size++;
-                    }
-                }
-            }
-        
-            size--;
-            int uniqueUIDS[] = {1000,1001};
-            int *unique_count = (int *)calloc(sizeof(uniqueUIDS)/sizeof(uniqueUIDS[0]), sizeof(int));
+            // get only the logs that have the given filename 
+            size_t size;
+            Log *logs = getLogsByFilename(log_array, log_array_size, filename, &size);
 
-            if (unique_count == NULL) {
+            // get all the users that have modified the specific file
+            size_t unique_UIDS_count;
+            int *unique_UIDS = getUniqueUIDS(logs, size, &unique_UIDS_count);
+            int *UID_access_count = (int *)calloc(unique_UIDS_count, sizeof(int)); // amount of times modified of the specific user
+            if (UID_access_count == NULL) {
                 perror("Memory allocation error");
                 return 1;
             }
 
-            for (int j = 0; j < sizeof(uniqueUIDS)/sizeof(uniqueUIDS[0]); j++){ 
-                //unique_count[j] = 0;
+            for (int j = 0; j < unique_UIDS_count; j++){ 
                 for (size_t i = 0; i < size; i++){
-                    if (uniqueUIDS[j] == logs[i].user_id){
+                    if (unique_UIDS[j] == logs[i].user_id){
                         displayLog(&logs[i]);
-                        if (isUnique(logs, i, logs[i].file_fingerprint)) {
-                            unique_count[j]++;
+                        if (isUniqueFingerprint(logs, i, logs[i].file_fingerprint)) {
+                            UID_access_count[j]++;
                         }
                     }
                 }
             printf("-----------------------------------------\n");
             }
             printf("-----------------------------------------\n|\tUSER\t|     EDIT AMOUNT\t|\n-----------------------------------------\n");
-            for (size_t i = 0; i < sizeof(uniqueUIDS)/sizeof(uniqueUIDS[0]); i++){
-                printf("|\t%d\t|\t%d\t\t|\n", uniqueUIDS[i], unique_count[i]);
+            for (size_t i = 0; i < unique_UIDS_count; i++){
+                printf("|\t%d\t|\t%d\t\t|\n", unique_UIDS[i], UID_access_count[i]);
             }
             printf("-----------------------------------------\n");
 
             free(logs);
-            free(unique_count);
+            free(UID_access_count);
+            free(unique_UIDS);
+
             break;
         case HELP:
             printf("[-m]: Prints malicious users\n[-i <filename>]: Prints table of users that modified the file given and the number of modifications\n[-h]: Help Message.\n");
@@ -254,6 +232,41 @@ Log * getLogArray(size_t *size_of_array){
     return log_array;
 }
 
+Log * getLogsByFilename(Log *log_array, size_t log_array_size, char *filename, size_t *size_of_array){
+
+    Log *logs = (Log *)malloc(sizeof(Log)); // logs array for which have the filename
+    if (logs == NULL) {
+        perror("Memory allocation error");
+        exit(1);
+    }
+    size_t size = 1;
+
+    for (size_t i = 0; i < log_array_size; i++){
+        if (strcmp(log_array[i].filename, filename) == 0){
+            printf("size = %ld\n", size*sizeof(Log));
+            if (size == 1){
+                logs[0] = log_array[i];
+                size++;
+            } else {
+                Log *temp = (Log *)realloc(logs, size * sizeof(Log));                    
+                if (!temp) {
+                    perror("error with realloc");
+                    free(logs);
+                    exit(1);
+                }
+                logs = temp;
+                logs[size-1] = log_array[i];
+                size++;
+            }
+        }
+    }
+        
+    size--;
+    
+    *size_of_array = size;
+
+    return logs;
+}
 Date getDate(char *dateString){
     Date date;
 
@@ -275,13 +288,58 @@ size_t getAmountOfLogs(FILE *fp){
     return count;   
 }
 
-int isUnique(Log *logs, int currentIndex, const char *fingerprint){
+int isUniqueFingerprint(Log *logs, int currentIndex, const char *fingerprint){
     for (int i = 0; i < currentIndex; i++) {
         if ((strcmp(logs[i].file_fingerprint, fingerprint) == 0)) {
             return 0; // Not unique
         }
     }
     return 1; // Unique
+}
+
+int* getUniqueUIDS(Log *logs, size_t logCount, size_t *uniqueUidCount) {
+    
+    int *uniqueUids = (int *)malloc(sizeof(int));
+    if (uniqueUids == NULL) {
+        perror("Memory allocation error");
+        exit(1);
+    }
+    size_t uidCount = 1;
+
+    // Loop through each log entry in the array
+    for (size_t i = 0; i < logCount; i++) {
+        int isUnique = 1;
+        for (int j = 0; j < uidCount; j++) {
+            if (uniqueUids[j] == logs[i].user_id) {
+                isUnique = 0;
+                break;
+            }
+        }
+        // if its the first item of the array
+        if (uidCount == 1){
+            uniqueUids[0] = logs[i].user_id;
+            uidCount++;
+            continue;
+        }
+        // If it's unique, add it to the array
+        if (isUnique) {
+            int *temp = (int *)realloc(uniqueUids, uidCount * sizeof(int));                    
+            if (!temp) {
+                perror("error with realloc");
+                free(logs);
+                exit(1);
+            }
+            uniqueUids = temp;
+            uniqueUids[uidCount-1] = logs[i].user_id;
+            uidCount++;
+        }
+    }
+
+    // Set the count of unique UIDs
+    uidCount--;
+    *uniqueUidCount = uidCount;
+
+    return uniqueUids;
 }
 
 void displayTimestamp(Timestamp *stamp){
