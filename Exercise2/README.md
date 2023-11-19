@@ -1,4 +1,7 @@
-By running the Makefile with: make clean make make run
+By running the Makefile with: m
+ake clean 
+make 
+make run
 
 16 files will have been generated, each with varying levels of access enabled or disabled. To execute the tasks associated with the second phase: ./acmonitor -m or ./acmonitor -i
 
