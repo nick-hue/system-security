@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <getopt.h>
 
+#define MAX_SIZE 8
+
 typedef struct Date {
     int day;
     int month;
@@ -31,6 +33,11 @@ typedef struct Log {
     int access_denied_flag;
     char *file_fingerprint;
 } Log;
+
+typedef struct Mal_User {
+    int user_id;
+    char* filename[MAX_SIZE]; // = (char*)malloc(8*sizeof(char));
+} Mal_User;
 
 typedef enum {
     PRINT_MALICIOUS,

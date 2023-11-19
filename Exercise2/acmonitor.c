@@ -40,21 +40,90 @@ int main(int argc, char *argv[]){
 
     switch(mode){
         case PRINT_MALICIOUS:
-            printf("Priting malicious users: \n");
             // 1. get logs
             // ERROR : to teleutaio log sto log array einai duplicate tou proteleutaiou
             log_array = getLogArray(&log_array_size);
             
             printf("AFTER FUNCTION CALL %ld\n", log_array_size);
+                  
+            // 2. print only the users that have more than 7 access denied 
+            size_t filenm_index = 0;
+            int array_size =0 ;
             
-            printf("\n\nDisplaying logs\n");
-            for (size_t i = 0; i < log_array_size-1; i++) {
-                displayLog(&log_array[i]);
+            Mal_User* possible_MalUsers = (Mal_User *)calloc(log_array_size, sizeof(Mal_User));  
+            int* malUser_array = (int*)calloc(log_array_size, sizeof(int));
+
+            if (malUser_array == NULL || possible_MalUsers == NULL){
+                fprintf(stderr, "Memory allocation failed\n");
+                exit(EXIT_FAILURE);
+            }
+                
+            for (size_t i = 0; i < log_array_size; i++){
+                if(log_array[i].access_denied_flag == 1){
+                    int cur_uid = log_array[i].user_id;
+                    char* cur_filenm = log_array[i].filename;
+                    
+                    size_t mal_index = 0;     //index of malUser_array
+
+                    for(size_t i = 0; i < log_array_size; i++){
+                        if(possible_MalUsers[i].user_id == 0){              //returns the first empty position
+                            mal_index = i;
+                            break;
+                        }else if (possible_MalUsers[i].user_id == cur_uid){ 
+                            mal_index = i;
+                            break;
+                        }
+                    }
+
+                    //If user not recorded, add him in the struct
+                    if( possible_MalUsers[mal_index].user_id == 0){ 
+                        possible_MalUsers[mal_index].user_id = cur_uid;
+                        //add filename
+                        possible_MalUsers[mal_index].filename[0] = cur_filenm;
+                    }else{
+                        size_t filenm_index = 0;
+                        for(size_t i = 0; i < 8; i++){
+                            if(possible_MalUsers[mal_index].filename[i] == NULL){       //give the first empty position
+                                filenm_index = i;
+                                break;
+                            }
+                            else if(strcmp(possible_MalUsers[mal_index].filename[i],cur_filenm) == 0){    
+                                filenm_index = i;
+                                break;
+                            }
+                        }
+
+                        if (filenm_index < 7){  //We haven't exceeded the 7 unpermitted accesses
+                            if(possible_MalUsers[mal_index].filename[filenm_index] == NULL){//
+                                possible_MalUsers[mal_index].filename[filenm_index] = cur_filenm;
+                            }else{  //Already recorded this file
+                              continue;
+                            }
+                        }else{
+                            if(malUser_array[0] == 0){
+                                malUser_array[0] = cur_uid;
+                                array_size++;
+                            }else{   
+                                //If space is not enough add more
+                                if(array_size > log_array_size){
+                                    malUser_array = realloc(malUser_array, (array_size + 1) * sizeof(int));
+                                }
+                                malUser_array[array_size] = cur_uid;
+                                array_size++;
+                            }
+                         }
+                       }
+                  }
             }
 
-            // 2. print only the users that have more than 7 access denied 
+            printf("\n\nDisplaying Malicious Users\n");
+            for (size_t i = 0; i < array_size; i++) {
+                printf("User Id: %d\n", malUser_array[i]);
+            }
 
-            
+            free(possible_MalUsers);
+            free(malUser_array);
+
             break;
         case FILE_INFO:
             printf("Show file info of file : %s\n", filename);
@@ -124,8 +193,9 @@ Log * getLogArray(size_t *size_of_array){
     char *buffer = (char *)malloc(file_size);
     size_t bytes_read = fread(buffer, 1, file_size, f);
     rewind(f);
-
-    size_t log_array_size = getAmountOfLogs(f)+1;
+    
+    size_t log_array_size = getAmountOfLogs(f);
+    printf("logarraysize : %ld\n", log_array_size);
     Log *log_array = (Log *)malloc(log_array_size*sizeof(Log));
     size_t log_index = 0;
 
@@ -202,6 +272,8 @@ Log * getLogArray(size_t *size_of_array){
                 } 
                 else 
                 {
+                    break;
+                    printf("inf = %s", info);
                     if (strcmp(info, "\n") == 0){
                         break;
                     } else {
