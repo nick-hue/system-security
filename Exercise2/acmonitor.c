@@ -205,7 +205,7 @@ Log * getLogArray(size_t *size_of_array){
                     if (strcmp(info, "\n") == 0){
                         break;
                     } else {
-                        //printf("Error: while trying to get data for making of the log.\n");
+                        printf("Error: while trying to get data for making of the log.\n");
                         //exit(1);
                     }                    
                 }
@@ -282,7 +282,7 @@ size_t getAmountOfLogs(FILE *fp){
     size_t count = 0;
     char c;
     for (c = getc(fp); c != EOF; c = getc(fp)){
-        if (c == '\n')
+        if (c == ';')
             count = count + 1; 
     }
     return count;   
