@@ -59,6 +59,7 @@ int main(int argc, char *argv[]){
         case FILE_INFO:
             printf("Show file info of file : %s\n", filename);
             
+            // get all the logs from the log file
             log_array = getLogArray(&log_array_size);
 
             // get only the logs that have the given filename 
@@ -74,17 +75,18 @@ int main(int argc, char *argv[]){
                 return 1;
             }
 
+            // sets the amount of times each user has modified the file
             for (int j = 0; j < unique_UIDS_count; j++){ 
                 for (size_t i = 0; i < size; i++){
                     if (unique_UIDS[j] == logs[i].user_id){
-                        displayLog(&logs[i]);
+                        // displayLog(&logs[i]);
                         if (isUniqueFingerprint(logs, i, logs[i].file_fingerprint)) {
                             UID_access_count[j]++;
                         }
                     }
                 }
-            printf("-----------------------------------------\n");
             }
+            // printing the table of the users that have modified the file given and the amount of times they have modified it
             printf("-----------------------------------------\n|\tUSER\t|     EDIT AMOUNT\t|\n-----------------------------------------\n");
             for (size_t i = 0; i < unique_UIDS_count; i++){
                 printf("|\t%d\t|\t%d\t\t|\n", unique_UIDS[i], UID_access_count[i]);
@@ -203,7 +205,7 @@ Log * getLogArray(size_t *size_of_array){
                     if (strcmp(info, "\n") == 0){
                         break;
                     } else {
-                        printf("Error: while trying to get data for making of the log.\n");
+                        //printf("Error: while trying to get data for making of the log.\n");
                         //exit(1);
                     }                    
                 }
@@ -223,7 +225,6 @@ Log * getLogArray(size_t *size_of_array){
         log_index++;
     }
 
-    printf("\n");
     free(buffer);
     fclose(f);
 
@@ -243,7 +244,6 @@ Log * getLogsByFilename(Log *log_array, size_t log_array_size, char *filename, s
 
     for (size_t i = 0; i < log_array_size; i++){
         if (strcmp(log_array[i].filename, filename) == 0){
-            printf("size = %ld\n", size*sizeof(Log));
             if (size == 1){
                 logs[0] = log_array[i];
                 size++;
