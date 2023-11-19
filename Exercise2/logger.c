@@ -54,7 +54,7 @@ FILE *fopen(const char* path, const char* mode){
     // open the file to get its contents 
     make_log(path, access_type, access_denied_flag);
     
-    char tmp[4] = " ;\0";
+    char tmp[3] = " ;\0";
     fprintf(fout, "%s", tmp); // the fprintf function runs the fwrite function if it does not take the "%s" argument
 
     return f;
@@ -87,7 +87,7 @@ size_t fwrite(const void *ptr, size_t size_of_element, size_t number_of_elements
 
     make_log(targetPath, access_type, access_denied_flag);
    
-    char tmp[4] = " ;\n\0";
+    char tmp[3] = " ;\0";
     fprintf(fout, "%s", tmp); // the fprintf function runs the fwrite function if it does not take the "%s" argument
 
     return written;
@@ -137,7 +137,19 @@ void make_log(const char *path, int access_type, int access_flag){
 
     FILE *hash_fp = (*original_fopen)(path, "r");
     // write log to logfile 
-    fprintf(fout, "\nUID: %d, Filename: %s, Date: %02d/%02d/%d, Timestamp: %02d:%02d:%02d, Access Type: %d, Access denied flag: %d, File fingerprint: ", getuid(), path, tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, access_type, access_flag);
+    
+    if (NULL != fout) {
+        fseek (fout, 0, SEEK_END);
+        long si = ftell(fout);
+
+        if (si == 0) {
+            fprintf(fout, "UID: %d, Filename: %s, Date: %02d/%02d/%d, Timestamp: %02d:%02d:%02d, Access Type: %d, Access denied flag: %d, File fingerprint: ", getuid(), path, tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, access_type, access_flag);
+        }
+        else {
+            fprintf(fout, "\nUID: %d, Filename: %s, Date: %02d/%02d/%d, Timestamp: %02d:%02d:%02d, Access Type: %d, Access denied flag: %d, File fingerprint: ", getuid(), path, tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, access_type, access_flag);
+        }
+    }
+    
     log_hash_content(hash_fp);
 }
 

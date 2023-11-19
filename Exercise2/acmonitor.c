@@ -40,13 +40,10 @@ int main(int argc, char *argv[]){
 
     switch(mode){
         case PRINT_MALICIOUS:
-            // 1. get logs
-            // ERROR : to teleutaio log sto log array einai duplicate tou proteleutaiou
             log_array = getLogArray(&log_array_size);
             
             printf("AFTER FUNCTION CALL %ld\n", log_array_size);
-                  
-            // 2. print only the users that have more than 7 access denied 
+
             size_t filenm_index = 0;
             int array_size =0 ;
             
@@ -116,7 +113,7 @@ int main(int argc, char *argv[]){
                   }
             }
 
-            printf("\n\nDisplaying Malicious Users\n");
+            printf("\n\nDisplaying Malicious Users\narray_size %d\n", array_size);
             for (size_t i = 0; i < array_size; i++) {
                 printf("User Id: %d\n", malUser_array[i]);
             }
