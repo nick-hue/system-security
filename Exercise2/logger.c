@@ -37,7 +37,7 @@ FILE *fopen(const char* path, const char* mode){
 
     if (strcmp(mode, "w")==0 || strcmp(mode, "a")==0){
         char sym_path[1024];
-        sprintf(sym_path, "symlink/symlink_file_%d", fileno(f));
+        sprintf(sym_path, "symlink_file_%d", fileno(f));
         make_symlink(path, sym_path);
     }
     int access_denied_flag;
@@ -61,8 +61,6 @@ FILE *fopen(const char* path, const char* mode){
 }
 
 size_t fwrite(const void *ptr, size_t size_of_element, size_t number_of_elements, FILE *stream){   
-    
-    //printf("Used custom fwrite...\n");
     size_t (*original_fwrite)(const void*, size_t, size_t, FILE *);
     original_fwrite = dlsym(RTLD_NEXT, "fwrite");
     size_t written = (*original_fwrite)(ptr, size_of_element, number_of_elements, stream);
@@ -70,7 +68,7 @@ size_t fwrite(const void *ptr, size_t size_of_element, size_t number_of_elements
     char *targetPath = (char *)malloc(1024);
     char symlinkPath[1024];
     
-    sprintf(symlinkPath, "symlink/symlink_file_%d", fileno(stream));
+    sprintf(symlinkPath, "symlink_file_%d", fileno(stream));
 
     targetPath = get_target_path_by_symlink(symlinkPath);
 

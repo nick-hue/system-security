@@ -42,8 +42,6 @@ int main(int argc, char *argv[]){
         case PRINT_MALICIOUS:
             log_array = getLogArray(&log_array_size);
             
-            printf("AFTER FUNCTION CALL %ld\n", log_array_size);
-
             size_t filenm_index = 0;
             int array_size =0 ;
             
@@ -100,20 +98,23 @@ int main(int argc, char *argv[]){
                             if(malUser_array[0] == 0){
                                 malUser_array[0] = cur_uid;
                                 array_size++;
-                            }else{   
-                                //If space is not enough add more
-                                if(array_size > log_array_size){
-                                    malUser_array = realloc(malUser_array, (array_size + 1) * sizeof(int));
+                            }else{
+                                //checking if uid is already recorded as malicious user
+                                for(int i=0; i<log_array_size; i++){
+                                    if(malUser_array[i] == cur_uid){
+                                        break;
+                                    }else{
+                                        malUser_array[array_size] = cur_uid;
+                                        array_size++;
+                                    }
                                 }
-                                malUser_array[array_size] = cur_uid;
-                                array_size++;
                             }
                          }
                        }
                   }
             }
 
-            printf("\n\nDisplaying Malicious Users\narray_size %d\n", array_size);
+            printf("Displaying Malicious Users\n");
             for (size_t i = 0; i < array_size; i++) {
                 printf("User Id: %d\n", malUser_array[i]);
             }
@@ -192,7 +193,6 @@ Log * getLogArray(size_t *size_of_array){
     rewind(f);
     
     size_t log_array_size = getAmountOfLogs(f);
-    printf("logarraysize : %ld\n", log_array_size);
     Log *log_array = (Log *)malloc(log_array_size*sizeof(Log));
     size_t log_index = 0;
 
@@ -213,18 +213,15 @@ Log * getLogArray(size_t *size_of_array){
         while (field != NULL) {           
             info = strtok_r(field, ":", &info_saveptr);
             while(info != NULL){
-                //printf("%s->", info);
                 if ((strcmp(info, "UID") == 0) || (strcmp(info, "\nUID") == 0))
                 {
                     info = strtok_r(NULL, ":", &info_saveptr);
-                    //printf("UID --------------> %s", info);
                     currentLog.user_id = atoi(info);
                     break;
                 } 
                 else if (strcmp(info, " Filename") == 0) 
                 {
                     info = strtok_r(NULL, ":", &info_saveptr);
-                    //printf("FILename ist %s", info);
                     currentLog.filename = strdup(info) + 1; // makes the filename from " testfile.txt" -> "testfile.txt"
                     break;
                 } 
@@ -233,7 +230,6 @@ Log * getLogArray(size_t *size_of_array){
                     info = strtok_r(NULL, ":", &info_saveptr);
                     Date current_date = getDate(info);
                     currentLog.date = current_date;
-                    //displayDate(&current_date);
                     break;
                 } 
                 else if (strcmp(info, " Timestamp") == 0)
@@ -245,7 +241,6 @@ Log * getLogArray(size_t *size_of_array){
                     currentLog.timestamp.minutes = atoi(info);
                     info = strtok_r(NULL, ":", &info_saveptr);
                     currentLog.timestamp.seconds = atoi(info);
-                    //displayTimestamp(&currentLog.timestamp);
                     break;
                 } 
                 else if (strcmp(info, " Access Type") == 0)
@@ -264,7 +259,6 @@ Log * getLogArray(size_t *size_of_array){
                 {
                     info = strtok_r(NULL, ":", &info_saveptr);
                     currentLog.file_fingerprint = strdup(info);
-                    //printf("%s", currentLog.file_fingerprint);
                     break;
                 } 
                 else 
@@ -275,7 +269,6 @@ Log * getLogArray(size_t *size_of_array){
                         break;
                     } else {
                         printf("Error: while trying to get data for making of the log.\n");
-                        //exit(1);
                     }                    
                 }
                 info = strtok_r(NULL, ":", &info_saveptr);
@@ -285,12 +278,9 @@ Log * getLogArray(size_t *size_of_array){
         
         line = strtok_r(NULL, ";", &line_saveptr);
 
-        //printf("\n\nAdding current log to the array: \n");
-        //displayLog(&currentLog);
 
         log_array[log_index] = currentLog;
         
-        //displayLog(&log_array[log_index]);
         log_index++;
     }
 
@@ -339,11 +329,10 @@ Log * getLogsByFilename(Log *log_array, size_t log_array_size, char *filename, s
 Date getDate(char *dateString){
     Date date;
 
-    if (sscanf(dateString, "%d/%d/%d", &date.day, &date.month, &date.year) == 3) {
-        //printf("Good date");
-    } else {
+    if (sscanf(dateString, "%d/%d/%d", &date.day, &date.month, &date.year) != 3) {
         printf("Error parsing date");
     }
+    
     return date;
 }
 

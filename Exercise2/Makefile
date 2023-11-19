@@ -16,4 +16,4 @@ run: logger.so test_aclog
 	LD_PRELOAD=./logger.so ./test_aclog
 
 clean:
-	rm -rf logger.so symlink/** file_logging.log *.txt test_aclog acmonitor
+	rm -rf logger.so file_logging.log *.txt test_aclog acmonitor

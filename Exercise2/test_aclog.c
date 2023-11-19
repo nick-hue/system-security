@@ -7,12 +7,13 @@ int main(){
 
     char **files = makeFiles(total_files, file_size);
 
+    // creating the 16 files
     for (int i = 0; i<total_files; i++){
         printf("Opening file: %s\n", files[i]);
 
         f = fopen(files[i], "w");
         if (!f){
-            //fprintf(stderr, "Failed to open file: %s", files[i]);
+            fprintf(stderr, "Failed to open file: %s", files[i]);
             continue;
         }
 
@@ -32,7 +33,7 @@ int main(){
         chmod(files[i], S_IWUSR | S_IXUSR | S_IWGRP | S_IXGRP | S_IWOTH | S_IXOTH);
         f = fopen(files[i], "r+");
         if (!f){
-            //fprintf(stderr, "Failed to open file: %s\n", files[i]);
+            fprintf(stderr, "Failed to open file: %s\n", files[i]);
             continue;
         }
         fclose(f);
@@ -46,7 +47,7 @@ int main(){
         chmod(files[i], S_IRUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
         f = fopen(files[i], "w+");
         if (!f){
-            //fprintf(stderr, "Failed to open file: %s\n", files[i]);
+            fprintf(stderr, "Failed to open file: %s\n", files[i]);
             continue;
         }
         char testString[] = "testasfadsfafsdsdf";   // this should not be written
@@ -62,12 +63,12 @@ int main(){
         chmod(files[i], S_IXUSR | S_IXGRP | S_IXOTH);
         f = fopen(files[i], "r");
         if (!f){
-            //fprintf(stderr, "Failed to open reading from file: %s\n", files[i]);
+            fprintf(stderr, "Failed to open reading from file: %s\n", files[i]);
         }
 
         f = fopen(files[i], "w+");
         if (!f){
-            //fprintf(stderr, "Failed to open for writing to file: %s\n", files[i]);
+            fprintf(stderr, "Failed to open for writing to file: %s\n", files[i]);
             continue;
         }
         char testString[] = "testasfadsfafsdsdf";   // this should not be written
@@ -80,7 +81,7 @@ int main(){
         for (int i = 0; i < 5; i++){
             f = fopen(files[j], "a");
             if (!f){
-                //fprintf(stderr, "Failed to open for append to file: %s\n", files[i]);
+                fprintf(stderr, "Failed to open for append to file: %s\n", files[i]);
                 continue;
             }
             char appendStr[] = "-append";                    // this should be appended 5 times
