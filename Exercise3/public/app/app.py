@@ -87,7 +87,7 @@ def search():
     res = cursor.execute(query)
     # Get the results
     results = res.fetchall()
-    print(results)
+
     if not results:
         return render_template("dashboard.html", noitem=name)
 
