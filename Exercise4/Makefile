@@ -1,4 +1,4 @@
-all: net_monitor
+all: net_monitor run
 
 net_monitor: net_monitor.c 
 	gcc net_monitor.c -o net_monitor
