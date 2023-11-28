@@ -1,8 +1,8 @@
-#include "net_monitor.h"
+#include "pcap_ex.h"
 
 int main(int argc, char *argv[]) {
     int opt;
-    char *input, *filter;
+    char *input = NULL, *filter = NULL;
     Mode mode;
 
     while ((opt = getopt(argc, argv, "i:r:f:h")) != -1) {
@@ -21,7 +21,6 @@ int main(int argc, char *argv[]) {
                 break;  
             case 'h':
                 mode = HELP;
-                printf("-i Select the network interface name (e.g., eth0)\n-r Packet capture file name (e.g., test.pcap)\n-f Filter expression in string format (e.g., port 8080)\n-h Help message, which show the usage of each parameter\n");                
                 break;
             default:
                 mode = EXIT_MODE;
@@ -36,7 +35,19 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    //printf("interface : %s\nfilter : %s\n", input, filter);
+    switch(mode){
+        case INTERFACE:
+            break;
+
+        case HELP:
+            printf("-i Select the network interface name (e.g., eth0)\n-r Packet capture file name (e.g., test.pcap)\n-f Filter expression in string format (e.g., port 8080)\n-h Help message, which show the usage of each parameter\n");                
+            break;
+        case EXIT_MODE:
+            fprintf(stderr, "Error: while getting mode.\nUse -h flag to show more info about arguments.\n");
+            exit(EXIT_FAILURE);
+    }
+
+    printf("interface : %s\nfilter : %s\n", input, filter);
 
     return 0;
 }

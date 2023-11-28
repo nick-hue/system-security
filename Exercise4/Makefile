@@ -1,6 +1,6 @@
 all: pcap_ex
 
-net_monitor: pcap_ex.c 
+pcap_ex: pcap_ex.c
 	gcc pcap_ex.c -o pcap_ex
 
 run: pcap_ex
