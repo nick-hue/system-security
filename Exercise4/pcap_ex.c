@@ -2,29 +2,26 @@
 
 int main(int argc, char *argv[]) {
     int opt;
-    char *input;
+    char *input, *filter;
     Mode mode;
 
     while ((opt = getopt(argc, argv, "i:r:f:h")) != -1) {
         switch (opt) {
             case 'i':
                 mode = INTERFACE;
-                input = strdup(optarg);
-                printf("%s\n", input);
+                input = optarg;
                 break;
             case 'r':
                 mode = PACKET;
                 input = strdup(optarg);
-                printf("%s\n", input);
                 break;  
             case 'f':
                 mode = FILTER;
-                input = strdup(optarg);
-                printf("%s\n", input);
+                filter = strdup(optarg);
                 break;  
             case 'h':
                 mode = HELP;
-                printf("Help mode\n", input);
+                printf("-i Select the network interface name (e.g., eth0)\n-r Packet capture file name (e.g., test.pcap)\n-f Filter expression in string format (e.g., port 8080)\n-h Help message, which show the usage of each parameter\n");                
                 break;
             default:
                 mode = EXIT_MODE;
@@ -32,6 +29,14 @@ int main(int argc, char *argv[]) {
                 exit(1);
         }
     }
+
+    // checking if the user gave no arguments
+    if (optind < 2) {
+        fprintf(stderr, "Error: No arguments provided.\nUse -h flag to show more info about arguments.\n");
+        exit(1);
+    }
+
+    //printf("interface : %s\nfilter : %s\n", input, filter);
 
     return 0;
 }
