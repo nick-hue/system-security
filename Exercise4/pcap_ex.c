@@ -54,6 +54,24 @@ int main(int argc, char *argv[]) {
                 return 2;
             }
 
+            if (filter){ // if filter exists apply it, if not dont ¯\_(ツ)_/¯
+                printf("filter exists\nfilter : %s\n", filter);
+
+                if (pcap_compile(handle, &fp, filter, 0, net) == -1) {
+                    fprintf(stderr, "Couldn't parse filter %s: %s\n", filter, pcap_geterr(handle));
+                    return(2);
+                }
+                
+                if (pcap_setfilter(handle, &fp) == -1) {
+                    fprintf(stderr, "Couldn't install filter %s: %s\n", filter, pcap_geterr(handle));
+                    return(2);
+                }
+                //packet = pcap_next(handle, &header);
+
+            } else {
+                printf("filter does not exist\n");
+            }
+
             if (pcap_loop(handle, 0, got_packet, NULL) < 0) {
                 fprintf(stderr, "pcap_loop() failed: %s\n", pcap_geterr(handle));
                 return 3;
