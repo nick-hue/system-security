@@ -43,31 +43,31 @@ int main(int argc, char *argv[]) {
 
             pcap_t *handle;			            /* Session handle */
             char errbuf[PCAP_ERRBUF_SIZE];	    /* Error string */
-            char *dev;                          /* Device Name */
-
-            //dev = argv[2];
-            //printf("Device : %s\n", dev);
+            struct bpf_program fp;		/* The compiled filter */
+            //bpf_u_int32 mask;		      /* Our netmask */
+            bpf_u_int32 net;		/* Our IP */
+            struct pcap_pkthdr header;	/* The header that pcap gives us */
+            const unsigned char *packet;		/* The actual packet */
 
             handle = pcap_open_offline(pcap_name, errbuf);
             if (handle == NULL) {
-                fprintf(stderr, "Couldn't open pcap file %s: %s\n", dev, errbuf);
+                fprintf(stderr, "Couldn't open pcap file %s: %s\n", pcap_name, errbuf);
                 return 2;
             }
 
-            if (filter){ // if filter exists apply it, if not dont ¯\_(ツ)_/¯
+            // if filter exists apply it, if not dont ¯\_(ツ)_/¯
+            if (filter){ 
                 printf("filter exists\nfilter : %s\n", filter);
 
                 if (pcap_compile(handle, &fp, filter, 0, net) == -1) {
                     fprintf(stderr, "Couldn't parse filter %s: %s\n", filter, pcap_geterr(handle));
-                    return(2);
+                    return 2;
                 }
                 
                 if (pcap_setfilter(handle, &fp) == -1) {
                     fprintf(stderr, "Couldn't install filter %s: %s\n", filter, pcap_geterr(handle));
-                    return(2);
+                    return 2;
                 }
-                //packet = pcap_next(handle, &header);
-
             } else {
                 printf("filter does not exist\n");
             }
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
 }
 
 void got_packet(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet){
-    printf("Calling back...\n");	
+    printf("Got packet...\n");	
 
     /* ethernet headers are always exactly 14 bytes */
     #define SIZE_ETHERNET 14
@@ -102,24 +102,73 @@ void got_packet(unsigned char *args, const struct pcap_pkthdr *header, const uns
     const struct sniff_ip *ip;              /* The IP header */
     const struct sniff_tcp *tcp;            /* The TCP header */
     const char *payload;                    /* Packet payload */
-
+    
     unsigned int size_ip;
     unsigned int size_tcp;
 
+    // ethernet header 
     ethernet = (struct sniff_ethernet*)(packet);
+    if (ntohs(ethernet->ether_type) == ETHERTYPE_IP) {
+        printf("IP\n");
+    } else  if (ntohs(ethernet->ether_type) == ETHERTYPE_ARP) {
+        printf("ARP\n");
+    } else  if (ntohs(ethernet->ether_type) == ETHERTYPE_REVARP) {
+        printf("Reverse ARP\n");
+    }
+
+    // ip header 
     ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
     size_ip = IP_HL(ip)*4;
     if (size_ip < 20) {
         printf("   * Invalid IP header length: %u bytes\n", size_ip);
         return;
     }
+
+    // if not TCP or UDP -> skip
+    if (ip->ip_p == IPPROTO_TCP) {
+        printf("Protocol : TCP packet.\n");
+    } else if (ip->ip_p == IPPROTO_UDP) {
+        printf("Protocol : UDP packet.\n");
+        return; // REMOVE THIS 
+    } else {
+        printf("Not a TCP or UDP packet. Skipping...\n\n");
+        return;
+    }
+
+    // skipping UDP for now only showing tcp, FIX LATER
     tcp = (struct sniff_tcp*)(packet + SIZE_ETHERNET + size_ip);
     size_tcp = TH_OFF(tcp)*4;
     if (size_tcp < 20) {
         printf("   * Invalid TCP header length: %u bytes\n", size_tcp);
         return;
     }
-    payload = (unsigned char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
-    //printf("payload of the packet : %s\n", payload);
 
+    char source_ip[INET_ADDRSTRLEN];
+    char dest_ip[INET_ADDRSTRLEN];
+
+    // inet_ntop - convert IPv4 and IPv6 addresses from binary to text form
+    inet_ntop(AF_INET, &ip->ip_src, source_ip, sizeof(source_ip));
+    if (source_ip == NULL){
+        fprintf(stderr, "Error: Converting source_ip to string.");
+        return;    
+    }
+    inet_ntop(AF_INET, &ip->ip_dst, dest_ip, sizeof(dest_ip));
+    if (dest_ip == NULL){
+        fprintf(stderr, "Error: Converting dest_ip to string.");
+        return;    
+    }
+
+    payload = (unsigned char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
+
+    printf("TCP Header size : %u\n", size_tcp);
+    printf("TCP SOURCE IP : %s\n", source_ip);
+    printf("TCP SOURCE PORT : %u\n", ntohs(tcp->th_sport));
+    printf("TCP DESTINATION IP : %s\n", dest_ip);
+    printf("TCP DESTINATION PORT : %u\n", ntohs(tcp->th_dport));
+    printf("TCP payload size: %u\n", header->len-size_tcp-size_ip-SIZE_ETHERNET);
+    printf("Payload in starts at: packet's header %p + %d bytes\n", &packet, SIZE_ETHERNET + size_ip + size_tcp);
+    printf("Payload in memory at: %p\n",&payload);
+    
+    printf("Packet capture length: %d\n", header->caplen);
+    printf("Packet total length: %d\n", header->len);
 }
