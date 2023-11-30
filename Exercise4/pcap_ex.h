@@ -12,6 +12,7 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
+#include <netinet/udp.h>
 #include <arpa/inet.h>
 
 typedef enum {
@@ -71,6 +72,8 @@ struct sniff_tcp {
 	unsigned short th_sum;		/* checksum */
 	unsigned short th_urp;		/* urgent pointer */
 };
+
+
 
 /* packet handler callback function */
 void got_packet(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet);
