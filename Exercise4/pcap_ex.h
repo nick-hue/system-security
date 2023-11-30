@@ -21,18 +21,18 @@ typedef enum {
 
 /* Ethernet header */
 struct sniff_ethernet {
-	u_char ether_dhost[ETHER_ADDR_LEN]; /* Destination host address */
-	u_char ether_shost[ETHER_ADDR_LEN]; /* Source host address */
-	u_short ether_type; /* IP? ARP? RARP? etc */
+	unsigned char ether_dhost[ETHER_ADDR_LEN]; /* Destination host address */
+	unsigned char ether_shost[ETHER_ADDR_LEN]; /* Source host address */
+	unsigned short ether_type; /* IP? ARP? RARP? etc */
 };
 
 /* IP header */
 struct sniff_ip {
-	u_char ip_vhl;		/* version << 4 | header length >> 2 */
-	u_char ip_tos;		/* type of service */
-	u_short ip_len;		/* total length */
-	u_short ip_id;		/* identification */
-	u_short ip_off;		/* fragment offset field */
+	unsigned char ip_vhl;		/* version << 4 | header length >> 2 */
+	unsigned char ip_tos;		/* type of service */
+	unsigned short ip_len;		/* total length */
+	unsigned short ip_id;		/* identification */
+	unsigned short ip_off;		/* fragment offset field */
 #define IP_RF 0x8000		/* reserved fragment flag */
 #define IP_DF 0x4000		/* don't fragment flag */
 #define IP_MF 0x2000		/* more fragments flag */

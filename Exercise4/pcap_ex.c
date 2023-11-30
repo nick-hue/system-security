@@ -13,10 +13,10 @@ int main(int argc, char *argv[]) {
                 break;
             case 'r':
                 mode = PACKET;
-                pcap_name = strdup(optarg);
+                pcap_name = optarg;
                 break;  
             case 'f':
-                filter = strdup(optarg);
+                filter = optarg;
                 break;  
             case 'h':
                 mode = HELP;
@@ -37,16 +37,24 @@ int main(int argc, char *argv[]) {
     switch(mode){
         case INTERFACE:
             // online mode i think 
-            char errbuf[PCAP_ERRBUF_SIZE];
-            char *dev = input;
-            printf("device: %s\n", dev);
+            pcap_t *handle;			/* Session handle */
+            char *dev;			/* The device to sniff on */
+            char errbuf[PCAP_ERRBUF_SIZE];	/* Error string */
+            struct bpf_program fp;		/* The compiled filter */
+            bpf_u_int32 mask;		/* Our netmask */
+            bpf_u_int32 net;		/* Our IP */
+            struct pcap_pkthdr header;	/* The header that pcap gives us */
+            const unsigned char *packet;		/* The actual packet */
+            pcap_if_t *all_devs;
 
-            pcap_t *handle;
-            struct bpf_program fp;	
-            bpf_u_int32 mask;		/* The netmask of our sniffing device */
-            bpf_u_int32 net;		/* The IP of our sniffing device */
+            if(pcap_findalldevs(&all_devs, errbuf) == -1){
+                fprintf(stderr, "error finding devices");
+                return 1;
+            }
 
-
+            dev = all_devs->name;
+            printf("Device : %s\n", dev);
+            
             if (pcap_lookupnet(dev, &net, &mask, errbuf) == -1) {
                 fprintf(stderr, "Can't get netmask for device %s\n", dev);
                 net = 0;
@@ -83,7 +91,7 @@ int main(int argc, char *argv[]) {
             /* Print its length */
             //printf("Jacked a packet with length of [%d]\n", header.len);
             /* And close the session */
-
+            
             
             pcap_close(handle);
 
@@ -111,17 +119,15 @@ int main(int argc, char *argv[]) {
 }
 
 void got_packet(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet){
-    printf("Calling back...\n");
-    struct pcap_pkthdr header;	/* The header that pcap gives us */
-    const unsigned char *packet;		
+    printf("Calling back...\n");	
 
     /* ethernet headers are always exactly 14 bytes */
     #define SIZE_ETHERNET 14
 
-    const struct sniff_ethernet *ethernet; /* The ethernet header */
-    const struct sniff_ip *ip; /* The IP header */
-    const struct sniff_tcp *tcp; /* The TCP header */
-    const char *payload; /* Packet payload */
+    const struct sniff_ethernet *ethernet;  /* The ethernet header */
+    const struct sniff_ip *ip;              /* The IP header */
+    const struct sniff_tcp *tcp;            /* The TCP header */
+    const char *payload;                    /* Packet payload */
 
     unsigned int size_ip;
     unsigned int size_tcp;
