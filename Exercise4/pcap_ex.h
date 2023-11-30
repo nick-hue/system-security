@@ -74,5 +74,7 @@ struct sniff_tcp {
 
 /* packet handler callback function */
 void got_packet(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet);
+/* shows statistics */
+void show_statistics();
 
 #endif

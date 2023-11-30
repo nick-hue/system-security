@@ -1,5 +1,11 @@
 #include "pcap_ex.h"
 
+unsigned int total_number_of_packets = 0;   /* Total number of packets received */
+unsigned int tcp_packets = 0;               /* Total number of TCP packets received. */
+unsigned int udp_packets = 0;               /* Total number of UDP packets received. */
+unsigned int tcp_packets_bytes = 0;         /* Total bytes of TCP packets received. */
+unsigned int udp_packets_bytes = 0;         /* Total bytes of UDP packets received. */
+
 int main(int argc, char *argv[]) {
     int opt;
     char *input = NULL, *pcap_name = NULL, *filter = NULL;
@@ -87,13 +93,14 @@ int main(int argc, char *argv[]) {
             exit(EXIT_FAILURE);
     }
 
-    //printf("interface : %s\nfilter : %s\n", input, filter);
-
+    show_statistics();
+    
     return 0;
 }
 
 void got_packet(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet){
-    printf("Got packet...\n");	
+    printf("\nGot packet...\n");	
+    total_number_of_packets++;
 
     /* ethernet headers are always exactly 14 bytes */
     #define SIZE_ETHERNET 14
@@ -126,9 +133,11 @@ void got_packet(unsigned char *args, const struct pcap_pkthdr *header, const uns
 
     // if not TCP or UDP -> skip
     if (ip->ip_p == IPPROTO_TCP) {
-        printf("Protocol : TCP packet.\n");
+        printf("Protocol : TCP\n");
+        tcp_packets++;
     } else if (ip->ip_p == IPPROTO_UDP) {
-        printf("Protocol : UDP packet.\n");
+        printf("Protocol : UDP\n");
+        udp_packets++;
         return; // REMOVE THIS 
     } else {
         printf("Not a TCP or UDP packet. Skipping...\n\n");
@@ -160,15 +169,22 @@ void got_packet(unsigned char *args, const struct pcap_pkthdr *header, const uns
 
     payload = (unsigned char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
 
-    printf("TCP Header size : %u\n", size_tcp);
+    printf("TCP header length : %u\n", size_tcp);
+    printf("TCP payload length: %u\n", header->len-size_tcp-size_ip-SIZE_ETHERNET);
     printf("TCP SOURCE IP : %s\n", source_ip);
-    printf("TCP SOURCE PORT : %u\n", ntohs(tcp->th_sport));
     printf("TCP DESTINATION IP : %s\n", dest_ip);
+    printf("TCP SOURCE PORT : %u\n", ntohs(tcp->th_sport));
     printf("TCP DESTINATION PORT : %u\n", ntohs(tcp->th_dport));
-    printf("TCP payload size: %u\n", header->len-size_tcp-size_ip-SIZE_ETHERNET);
     printf("Payload in starts at: packet's header %p + %d bytes\n", &packet, SIZE_ETHERNET + size_ip + size_tcp);
     printf("Payload in memory at: %p\n",&payload);
     
     printf("Packet capture length: %d\n", header->caplen);
     printf("Packet total length: %d\n", header->len);
+    tcp_packets_bytes+=header->len;
+    //udp_packets_bytes+=header->len;
+}
+
+void show_statistics(){
+    printf("\n   --- Showing Statistics ---\n");
+    printf("Total number of packets received: %u\nTotal number of TCP packets received: %u\nTotal number of UDP packets received.: %u\nTotal bytes of TCP packets received.: %u\nTotal bytes of UDP packets received: %u\n", total_number_of_packets, tcp_packets, udp_packets, tcp_packets_bytes, udp_packets_bytes);
 }
