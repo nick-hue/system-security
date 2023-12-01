@@ -15,6 +15,9 @@
 #include <netinet/udp.h>
 #include <arpa/inet.h>
 
+/* ethernet headers are always exactly 14 bytes */
+#define SIZE_ETHERNET 14
+
 typedef enum {
     INTERFACE,
     PACKET,
@@ -72,8 +75,6 @@ struct sniff_tcp {
 	unsigned short th_sum;		/* checksum */
 	unsigned short th_urp;		/* urgent pointer */
 };
-
-
 
 /* packet handler callback function */
 void got_packet(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet);

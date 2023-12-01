@@ -57,7 +57,7 @@ int main(int argc, char *argv[]) {
             handle = pcap_open_offline(pcap_name, errbuf);
             if (handle == NULL) {
                 fprintf(stderr, "Couldn't open pcap file %s: %s\n", pcap_name, errbuf);
-                return 2;
+                return -1;
             }
 
             // if filter exists apply it, if not dont ¯\_(ツ)_/¯
@@ -66,12 +66,12 @@ int main(int argc, char *argv[]) {
 
                 if (pcap_compile(handle, &fp, filter, 0, net) == -1) {
                     fprintf(stderr, "Couldn't parse filter %s: %s\n", filter, pcap_geterr(handle));
-                    return 2;
+                    return -1;
                 }
                 
                 if (pcap_setfilter(handle, &fp) == -1) {
                     fprintf(stderr, "Couldn't install filter %s: %s\n", filter, pcap_geterr(handle));
-                    return 2;
+                    return -1;
                 }
             } else {
                 printf("filter does not exist\n");
@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
 
             if (pcap_loop(handle, 0, got_packet, NULL) < 0) {
                 fprintf(stderr, "pcap_loop() failed: %s\n", pcap_geterr(handle));
-                return 3;
+                return -1;
             }
 
             pcap_close(handle);
@@ -100,13 +100,10 @@ int main(int argc, char *argv[]) {
 void got_packet(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet){
     printf("\n\n");	
 
-    /* ethernet headers are always exactly 14 bytes */
-    #define SIZE_ETHERNET 14
-
     const struct sniff_ethernet *ethernet;  /* The ethernet header */
     const struct sniff_ip *ip;              /* The IP header */
     const struct sniff_tcp *tcp;            /* The TCP header */
-    const struct udphdr *udp;            /* The UDP header */
+    const struct udphdr *udp;               /* The UDP header */
 
     const char *payload;                    /* Packet payload */
     
@@ -116,13 +113,7 @@ void got_packet(unsigned char *args, const struct pcap_pkthdr *header, const uns
 
     // ethernet header 
     ethernet = (struct sniff_ethernet*)(packet);
-    // if (ntohs(ethernet->ether_type) == ETHERTYPE_IP) {
-    //     printf("IP\n");
-    // } else if (ntohs(ethernet->ether_type) == ETHERTYPE_ARP) {
-    //     printf("ARP\n");
-    // } else if (ntohs(ethernet->ether_type) == ETHERTYPE_REVARP) {
-    //     printf("Reverse ARP\n");
-    // }
+
     total_number_of_packets++;
     // ip header 
     ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
@@ -134,9 +125,9 @@ void got_packet(unsigned char *args, const struct pcap_pkthdr *header, const uns
 
     // if not TCP or UDP -> skip
     if (ip->ip_p == IPPROTO_TCP) {
-        printf("Protocol : TCP\n");
         tcp_packets++;
 
+        // tcp header
         tcp = (struct sniff_tcp*)(packet + SIZE_ETHERNET + size_ip);
         size_tcp = TH_OFF(tcp)*4;
         if (size_tcp < 20) {
@@ -160,25 +151,24 @@ void got_packet(unsigned char *args, const struct pcap_pkthdr *header, const uns
         }
 
         payload = (unsigned char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
-
+        
+        printf("Protocol : TCP\n");
         printf("TCP header length : %u\n", size_tcp);
         printf("TCP payload length: %u\n", header->len-size_tcp-size_ip-SIZE_ETHERNET);
         printf("TCP SOURCE IP : %s\n", source_ip);
         printf("TCP DESTINATION IP : %s\n", dest_ip);
         printf("TCP SOURCE PORT : %u\n", ntohs(tcp->th_sport));
         printf("TCP DESTINATION PORT : %u\n", ntohs(tcp->th_dport));
-        printf("Payload starts at: packet's header %p + %d bytes\n", &packet, SIZE_ETHERNET + size_ip + size_tcp);
+        printf("Payload starts at: TCP packet's header %p + %d bytes\n", &packet, SIZE_ETHERNET + size_ip + size_tcp);
         printf("Payload in memory at: %p\n",&payload);
-        printf("Packet capture length: %d\n", header->caplen);
         printf("Packet total length: %d\n", header->len);
         
         tcp_packets_bytes+=header->len;
 
     } else if (ip->ip_p == IPPROTO_UDP) {
-        printf("Protocol : UDP\n");
-        printf("Packet total length: %d\n", header->len);
-
         udp_packets++;
+
+        // udp header
         udp = (struct udphdr*)(packet + SIZE_ETHERNET + size_ip);
         size_udp = 8; // udp header is always 8 bytes 
         
@@ -198,10 +188,8 @@ void got_packet(unsigned char *args, const struct pcap_pkthdr *header, const uns
         }
 
         payload = (unsigned char *)(packet + SIZE_ETHERNET + size_ip + size_udp);
-        //printf("Payload in starts at: packet's header %p + %d bytes\n", &packet, SIZE_ETHERNET + size_ip + size_tcp);
-        //printf("Payload in memory at: %p\n",&payload);
-
-
+        
+        printf("Protocol : UDP\n");
         printf("UDP header length : %u\n", size_udp);
         printf("UDP payload length: %u\n", header->len-size_udp-size_ip-SIZE_ETHERNET);
         printf("UDP SOURCE IP : %s\n", source_ip);
@@ -217,8 +205,6 @@ void got_packet(unsigned char *args, const struct pcap_pkthdr *header, const uns
         printf("Not a TCP or UDP packet. Skipping...\n\n");
         return;
     }
-
-    
 }
 
 void show_statistics(){
