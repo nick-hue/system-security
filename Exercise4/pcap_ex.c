@@ -49,9 +49,9 @@ int main(int argc, char *argv[]) {
 
             pcap_t *handle;			            /* Session handle */
             char errbuf[PCAP_ERRBUF_SIZE];	    /* Error string */
-            struct bpf_program fp;		/* The compiled filter */
-            bpf_u_int32 net;		/* Our IP */
-            struct pcap_pkthdr header;	/* The header that pcap gives us */
+            struct bpf_program fp;		        /* The compiled filter */
+            bpf_u_int32 net;		            /* Our IP */
+            struct pcap_pkthdr header;	        /* The header that pcap gives us */
             const unsigned char *packet;		/* The actual packet */
 
             handle = pcap_open_offline(pcap_name, errbuf);
