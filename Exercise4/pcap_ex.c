@@ -47,44 +47,28 @@ int main(int argc, char *argv[]) {
     switch(mode){
         case INTERFACE:
             // online mode
-            char *dev;                           /* Name of device (e.g. eth0, xl1, wlan0) */
-            pcap_if_t *alldevs;
-            int packet_count_limit = -1;
-            int timeout_limit = 10000;          /* 10 seconds in milliseconds */
-            bpf_u_int32 mask;                   /* The netmask of our sniffinf device */
+            char *dev;                              /* Name of device (e.g. eth0, xl1, wlan0) */
+            int packet_count_limit = 10;
+            int timeout_limit = 1000;              /* 10 seconds in milliseconds */
+            bpf_u_int32 mask;                       /* The netmask of our sniffinf device */
             struct bpf_program cfilter;		        /* The compiled filter */
 
-            
-
-            if (pcap_findalldevs(&alldevs, errbuf) == -1){
-                fprintf(stderr, "Error in pcap_findalldevs: %s\n", errbuf);
-                return 2;
-            }
-            /*Use the first device*/
-            dev = alldevs->name;
-            if(dev == NULL){
-                fprintf(stderr, "Couldn't find default device: %s\n", errbuf);
-                return 2;
-            }
             /*Print the device*/
-            printf("Device: %s\n", dev);
             dev = input;
-            pcap_freealldevs(alldevs);
+            printf("Device: %s\n", dev);
 
-            printf("Network device found: %s\n", dev);
-
-            /*Aquire on of the device's IPv4 network number and the subnet mask*/
+            /* Aquire on of the device's IPv4 network number and the subnet mask */
             if(pcap_lookupnet(dev, &net, &mask, errbuf) == -1){
                 fprintf(stderr, "Can't get netmask for device: %s\n", dev);
                 net = 0;
                 mask = 0;
             }
 
-            /*Open device for live capture*/
+            /* Open device for live capture */
             handle = pcap_open_live(dev, BUFSIZ, packet_count_limit, timeout_limit, errbuf);
             if (handle == NULL) {
                 fprintf(stderr, "Couldn't open device %s: %s\n", dev, errbuf);
-                return 2;
+                return 1;
             }
 
             // if filter exists apply it, if not dont ¯\_(ツ)_/¯
@@ -93,28 +77,27 @@ int main(int argc, char *argv[]) {
 
                 if (pcap_compile(handle, &cfilter, filter, 0, net) == -1) {
                     fprintf(stderr, "Couldn't parse filter %s: %s\n", filter, pcap_geterr(handle));
-                    return 2;
+                    return 1;
                 }
                 
                 if (pcap_setfilter(handle, &cfilter) == -1) {
                     fprintf(stderr, "Couldn't install filter %s: %s\n", filter, pcap_geterr(handle));
-                    return 2;
+                    return 1;
                 }
             } else {
                 printf("filter does not exist\n");
             }
 
-            if (pcap_loop(handle, 0, got_packet, NULL) < 0) {
+            printf("Listening...");
+            if (pcap_loop(handle, packet_count_limit, got_packet, NULL) < 0) {
                 fprintf(stderr, "pcap_loop() failed: %s\n", pcap_geterr(handle));
-                return 3;
+                return 1;
             }
-
-
 
             pcap_close(handle);
             break;
         case PACKET:
-            // offline mode i think
+            // offline mode 
 
             struct bpf_program fp;		        /* The compiled filter */
             struct pcap_pkthdr header;	        /* The header that pcap gives us */
@@ -123,7 +106,7 @@ int main(int argc, char *argv[]) {
             handle = pcap_open_offline(pcap_name, errbuf);
             if (handle == NULL) {
                 fprintf(stderr, "Couldn't open pcap file %s: %s\n", pcap_name, errbuf);
-                return -1;
+                return 1;
             }
 
             // if filter exists apply it, if not dont ¯\_(ツ)_/¯
@@ -132,12 +115,12 @@ int main(int argc, char *argv[]) {
 
                 if (pcap_compile(handle, &fp, filter, 0, net) == -1) {
                     fprintf(stderr, "Couldn't parse filter %s: %s\n", filter, pcap_geterr(handle));
-                    return -1;
+                    return 1;
                 }
                 
                 if (pcap_setfilter(handle, &fp) == -1) {
                     fprintf(stderr, "Couldn't install filter %s: %s\n", filter, pcap_geterr(handle));
-                    return -1;
+                    return 1;
                 }
             } else {
                 printf("filter does not exist\n");
@@ -145,7 +128,7 @@ int main(int argc, char *argv[]) {
 
             if (pcap_loop(handle, 0, got_packet, NULL) < 0) {
                 fprintf(stderr, "pcap_loop() failed: %s\n", pcap_geterr(handle));
-                return -1;
+                return 1;
             }
 
             pcap_close(handle);
