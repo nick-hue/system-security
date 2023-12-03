@@ -83,13 +83,20 @@ struct PacketInfo {
 	tcp_seq seq;		/* sequence number */
 };
 
+struct NetworkFlow {
+	unsigned short sport;			/* source port */
+	unsigned short dport;			/* destination port */
+	unsigned char  ip_p;			/* protocol */
+	struct in_addr ip_src,ip_dst; 	/* source and dest address */
+};
+
 /* packet handler callback function for online mode*/
 void got_packet_online(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet);
 /* packet handler callback function for offline mode*/
 void got_packet_offline(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet);
 /* shows statistics */
 void show_statistics();
-/* handle keyboard interrup*/
+/* function that hundles keyboard interrupt */
 void signalHandler(int signalNumber);
 
 #endif

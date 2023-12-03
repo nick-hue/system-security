@@ -1,29 +1,44 @@
 #include "pcap_ex.h"
 
-unsigned int total_number_of_NetworkFLows = 0;   /* Total number of total_number_of_NetworkFLows received */
-unsigned int tcpNetworkFLows_packets = 0;               /* Total number of TCP packets received. */
-unsigned int udpNetworkFLows_packets = 0;               /* Total number of UDP packets received. */
-unsigned int total_number_of_packets = 0;   /* Total number of packets received */
-unsigned int tcp_packets = 0;               /* Total number of TCP packets received. */
-unsigned int udp_packets = 0;               /* Total number of UDP packets received. */
-unsigned int tcp_packets_bytes = 0;         /* Total bytes of TCP packets received. */
-unsigned int udp_packets_bytes = 0;         /* Total bytes of UDP packets received. */
+unsigned int tcp_network_flows_packets = 0;               /* Total number of TCP packets received. */
+unsigned int udp_network_flows_packets = 0;               /* Total number of UDP packets received. */
+unsigned int total_number_of_packets = 0;                 /* Total number of packets received */
+unsigned int tcp_packets = 0;                             /* Total number of TCP packets received. */
+unsigned int udp_packets = 0;                             /* Total number of UDP packets received. */
+unsigned int tcp_packets_bytes = 0;                       /* Total bytes of TCP packets received. */
+unsigned int udp_packets_bytes = 0;                       /* Total bytes of UDP packets received. */
+//struct NetworkFlow tcp_network_flows[MAX_PACKETS];
+//struct NetworkFlow udp_network_flows[MAX_PACKETS];
 struct PacketInfo tcp_transmitted_packets[MAX_PACKETS];
+
+struct NetworkFlow* tcp_network_flows;
+struct NetworkFlow* udp_network_flows;
+
 int num_transmitted_packets = 0;
+
+/*unsigned int hashFlow(struct NetworkFLow *network_flow){
+    return()
+}*/
 
 int main(int argc, char *argv[]) {
     int opt;
     char *dev = NULL, *pcap_name = NULL, *filter = NULL;
     Mode mode;
+    
     signal(SIGINT, signalHandler);
+    
     FILE* f = fopen("log.txt", "w");
     if (f == NULL) {
         perror("Error opening file");
         return -1;
     }
-
     fclose(f);
     
+    tcp_network_flows = (struct NetworkFlow *)malloc(sizeof(struct NetworkFlow));
+    tcp_network_flows_packets++;
+    udp_network_flows = (struct NetworkFlow *)malloc(sizeof(struct NetworkFlow));
+    udp_network_flows_packets++;
+
     while ((opt = getopt(argc, argv, "i:r:f:h")) != -1) {
         switch (opt) {
             case 'i':
@@ -67,12 +82,9 @@ int main(int argc, char *argv[]) {
     struct pcap_pkthdr header;	        /* The header that pcap gives us */
     const unsigned char *packet;		/* The actual packet */
 
-
     switch(mode){
         case INTERFACE:
             // online mode
-            //My device interface name: wlp2s0
-            /*Print the device*/
             if (dev == NULL) {
                 fprintf(stderr, "Device is not given \n");
                 return 2;
@@ -85,14 +97,16 @@ int main(int argc, char *argv[]) {
                 mask = 0;
             }
 
+            printf("Press CTRL+C to stop capturing.\nListening...\n");
+
             /* Open device for live capture */
             handle = pcap_open_live(dev, BUFSIZ, packet_count_limit, timeout_limit, errbuf);
             if (handle == NULL) {
                 fprintf(stderr, "Couldn't open device %s: %s\n", dev, errbuf);
                 return 1;
             }
-
-            // if filter exists apply it, if not dont ¯\_(ツ)_/¯
+            
+            // check if filter exists, apply it if so
             if (filter){ 
                 printf("filter exists\nfilter : %s\n", filter);
 
@@ -107,7 +121,6 @@ int main(int argc, char *argv[]) {
                 }
             } 
 
-            printf("Listening...");
             if (pcap_loop(handle, packet_count_limit, got_packet_online, NULL) < 0) {
                 fprintf(stderr, "pcap_loop() failed: %s\n", pcap_geterr(handle));
                 return 1;
@@ -116,14 +129,14 @@ int main(int argc, char *argv[]) {
             pcap_close(handle);
             break;
         case PACKET:
-            // offline mode i think
+            // offline mode 
             handle = pcap_open_offline(pcap_name, errbuf);
             if (handle == NULL) {
                 fprintf(stderr, "Couldn't open pcap file %s: %s\n", pcap_name, errbuf);
                 return 1;
             }
 
-            // if filter exists apply it, if not dont ¯\_(ツ)_/¯
+            // check if filter exists, apply it if so
             if (filter){ 
                 printf("filter exists\nfilter : %s\n", filter);
 
@@ -159,20 +172,21 @@ int main(int argc, char *argv[]) {
 }
 
 void got_packet_online(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet){	
-    const struct sniff_ethernet *ethernet;  /* The ethernet header *///if not ip skip
+    const struct sniff_ethernet *ethernet;  /* The ethernet header */
     const struct sniff_ip *ip;              /* The IP header */
-    const struct sniff_tcp *tcp;               /* The TCP header */
+    const struct sniff_tcp *tcp;            /* The TCP header */
     const struct udphdr *udp;               /* The UDP header */
     bool is_retransmission;
 
     const char *payload;                    /* Packet payload */
     
-    unsigned int size_ip;
-    unsigned int size_tcp;
-    unsigned int size_udp;
+    unsigned int size_ip;                   /* ip header size */
+    unsigned int size_tcp;                  /* tcp header size */
+    unsigned int size_udp;                  /* udp header size */
 
     total_number_of_packets++;
 
+    
     // ethernet header 
     ethernet = (struct sniff_ethernet*)(packet);
     if (ntohs(ethernet->ether_type) != ETHERTYPE_IP){
@@ -189,6 +203,22 @@ void got_packet_online(unsigned char *args, const struct pcap_pkthdr *header, co
         return;
     }
 
+    char source_ip[INET_ADDRSTRLEN];    // readable represantation of source IP address
+    char dest_ip[INET_ADDRSTRLEN];      // readable represantation of destination IP address
+
+    // inet_ntop - convert IPv4 and IPv6 addresses from binary to text form
+    inet_ntop(AF_INET, &ip->ip_src, source_ip, sizeof(source_ip));
+    if (source_ip == NULL){
+        fprintf(stderr, "Error: Converting source_ip to string.");
+        return;    
+    }
+    inet_ntop(AF_INET, &ip->ip_dst, dest_ip, sizeof(dest_ip));
+    if (dest_ip == NULL){
+        fprintf(stderr, "Error: Converting dest_ip to string.");
+        return;    
+    }
+
+
     // if not TCP or UDP -> skip
     if (ip->ip_p == IPPROTO_TCP) {
         tcp_packets++;
@@ -200,22 +230,7 @@ void got_packet_online(unsigned char *args, const struct pcap_pkthdr *header, co
             printf("   * Invalid TCP header length: %u bytes\n", size_tcp);
             return;
         }
-
-        char source_ip[INET_ADDRSTRLEN];
-        char dest_ip[INET_ADDRSTRLEN];
-
-        // inet_ntop - convert IPv4 and IPv6 addresses from binary to text form
-        inet_ntop(AF_INET, &ip->ip_src, source_ip, sizeof(source_ip));
-        if (source_ip == NULL){
-            fprintf(stderr, "Error: Converting source_ip to string.");
-            return;    
-        }
-        inet_ntop(AF_INET, &ip->ip_dst, dest_ip, sizeof(dest_ip));
-        if (dest_ip == NULL){
-            fprintf(stderr, "Error: Converting dest_ip to string.");
-            return;    
-        }
-
+        
         /*ntohl converts 32-bit unsigned integer from network byte order to host byte order*/
         tcp_seq seq_number = ntohl(tcp->th_seq);
         tcp_seq ack_number = ntohl(tcp->th_ack);
@@ -237,6 +252,37 @@ void got_packet_online(unsigned char *args, const struct pcap_pkthdr *header, co
 
         payload = (unsigned char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
         
+        // if list of network flows is empty insert it
+
+        if (tcp_network_flows_packets == 0){
+            tcp_network_flows[tcp_network_flows_packets].dport = tcp->th_dport; 
+            tcp_network_flows[tcp_network_flows_packets].sport = tcp->th_sport; 
+            tcp_network_flows[tcp_network_flows_packets].ip_dst = ip->ip_dst;  
+            tcp_network_flows[tcp_network_flows_packets].ip_p = ip->ip_p; 
+            tcp_network_flows[tcp_network_flows_packets].ip_src = ip->ip_src;
+            tcp_network_flows_packets++;
+        } else {
+            for(int i=0; i<tcp_network_flows_packets; i++){
+                if(!(tcp_network_flows[i].dport == tcp->th_dport && tcp_network_flows[i].sport == tcp->th_sport && tcp_network_flows[i].ip_dst.s_addr == ip->ip_dst.s_addr &&  tcp_network_flows[i].ip_p == ip->ip_p && tcp_network_flows[i].ip_src.s_addr == ip->ip_src.s_addr)) {
+                        struct NetworkFlow* temp = (struct NetworkFlow *)realloc(tcp_network_flows, tcp_network_flows_packets*sizeof(struct NetworkFlow));
+                        if (!temp) {
+                            perror("error with realloc");
+                            free(tcp_network_flows);
+                            exit(1);
+                        }
+                        tcp_network_flows = temp;
+                        int index = tcp_network_flows_packets-1;
+                        tcp_network_flows[index].dport = tcp->th_dport; 
+                        tcp_network_flows[index].sport = tcp->th_sport; 
+                        tcp_network_flows[index].ip_dst = ip->ip_dst;  
+                        tcp_network_flows[index].ip_p = ip->ip_p; 
+                        tcp_network_flows[index].ip_src = ip->ip_src;
+                        tcp_network_flows_packets++;
+                }
+            }
+        }
+        //Checking if network flow already exists
+                
         FILE* f = fopen("log.txt", "a");
         if (f == NULL) {
             perror("Error opening file");
@@ -256,7 +302,7 @@ void got_packet_online(unsigned char *args, const struct pcap_pkthdr *header, co
         fprintf(f, "Payload starts at: TCP packet's header %p + %d bytes\n", &packet, SIZE_ETHERNET + size_ip + size_tcp);
         fprintf(f, "Payload in memory at: %p\n", &payload);
         fprintf(f, "Packet total length: %d\n\n", header->len);
-
+        
         fclose(f);
         
         tcp_packets_bytes+=header->len;
@@ -267,23 +313,38 @@ void got_packet_online(unsigned char *args, const struct pcap_pkthdr *header, co
         // udp header
         udp = (struct udphdr*)(packet + SIZE_ETHERNET + size_ip);
         size_udp = 8; // udp header is always 8 bytes 
-        
-        char source_ip[INET_ADDRSTRLEN];
-        char dest_ip[INET_ADDRSTRLEN];
-
-        // inet_ntop - convert IPv4 and IPv6 addresses from binary to text form
-        inet_ntop(AF_INET, &ip->ip_src, source_ip, sizeof(source_ip));
-        if (source_ip == NULL){
-            fprintf(stderr, "Error: Converting source_ip to string.");
-            return;    
-        }
-        inet_ntop(AF_INET, &ip->ip_dst, dest_ip, sizeof(dest_ip));
-        if (dest_ip == NULL){
-            fprintf(stderr, "Error: Converting dest_ip to string.");
-            return;    
-        }
 
         payload = (unsigned char *)(packet + SIZE_ETHERNET + size_ip + size_udp);
+        
+        // if list of network flows is empty insert it
+       if (udp_network_flows_packets == 0){
+            udp_network_flows[udp_network_flows_packets].dport = udp->uh_dport; 
+            udp_network_flows[udp_network_flows_packets].sport = udp->uh_sport; 
+            udp_network_flows[udp_network_flows_packets].ip_dst = ip->ip_dst;  
+            udp_network_flows[udp_network_flows_packets].ip_p = ip->ip_p; 
+            udp_network_flows[udp_network_flows_packets].ip_src = ip->ip_src;
+            udp_network_flows_packets++;
+        } else {
+            for(int i=0; i<udp_network_flows_packets; i++){
+                if(!(udp_network_flows[i].dport == udp->uh_dport && udp_network_flows[i].sport == udp->uh_sport && udp_network_flows[i].ip_dst.s_addr == ip->ip_dst.s_addr &&  udp_network_flows[i].ip_p == ip->ip_p && udp_network_flows[i].ip_src.s_addr == ip->ip_src.s_addr)) {
+                    struct NetworkFlow* temp = (struct NetworkFlow *)realloc(udp_network_flows, udp_network_flows_packets*sizeof(struct NetworkFlow));
+                    if (!temp) {
+                        perror("error with realloc");
+                        free(tcp_network_flows);
+                        exit(1);
+                    }
+                    udp_network_flows = temp;
+                    int index = udp_network_flows_packets-1;
+
+                    udp_network_flows[udp_network_flows_packets].dport = udp->uh_dport; 
+                    udp_network_flows[udp_network_flows_packets].sport = udp->uh_sport; 
+                    udp_network_flows[udp_network_flows_packets].ip_dst = ip->ip_dst;  
+                    udp_network_flows[udp_network_flows_packets].ip_p = ip->ip_p; 
+                    udp_network_flows[udp_network_flows_packets].ip_src = ip->ip_src;
+                    udp_network_flows_packets++;
+                }
+            }
+        }
         
         FILE *file = fopen("log.txt", "a");
         if (file == NULL) {
@@ -309,7 +370,6 @@ void got_packet_online(unsigned char *args, const struct pcap_pkthdr *header, co
         printf("Not a TCP or UDP packet. Skipping...\n\n");
         return;
     }
-
 }
 
 void got_packet_offline(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet){
@@ -323,9 +383,9 @@ void got_packet_offline(unsigned char *args, const struct pcap_pkthdr *header, c
 
     const char *payload;                    /* Packet payload */
     
-    unsigned int size_ip;
-    unsigned int size_tcp;
-    unsigned int size_udp;
+    unsigned int size_ip;                   /* ip header size */
+    unsigned int size_tcp;                  /* tcp header size */
+    unsigned int size_udp;                  /* udp header size */
 
     // ethernet header 
     ethernet = (struct sniff_ethernet*)(packet);
@@ -342,6 +402,21 @@ void got_packet_offline(unsigned char *args, const struct pcap_pkthdr *header, c
         return;
     }
 
+    char source_ip[INET_ADDRSTRLEN];    // readable represantation of source IP address
+    char dest_ip[INET_ADDRSTRLEN];      // readable represantation of destination IP address
+
+    // inet_ntop - convert IPv4 and IPv6 addresses from binary to text form
+    inet_ntop(AF_INET, &ip->ip_src, source_ip, INET_ADDRSTRLEN);
+    if (source_ip == NULL){
+        fprintf(stderr, "Error: Converting source_ip to string.");
+        return;    
+    }
+    inet_ntop(AF_INET, &ip->ip_dst, dest_ip, INET_ADDRSTRLEN);
+    if (dest_ip == NULL){
+        fprintf(stderr, "Error: Converting dest_ip to string.");
+        return;    
+    }
+
     // if not TCP or UDP -> skip
     if (ip->ip_p == IPPROTO_TCP) {
         tcp_packets++;
@@ -352,21 +427,6 @@ void got_packet_offline(unsigned char *args, const struct pcap_pkthdr *header, c
         if (size_tcp < 20) {
             printf("   * Invalid TCP header length: %u bytes\n", size_tcp);
             return;
-        }
-
-        char source_ip[INET_ADDRSTRLEN];
-        char dest_ip[INET_ADDRSTRLEN];
-
-        // inet_ntop - convert IPv4 and IPv6 addresses from binary to text form
-        inet_ntop(AF_INET, &ip->ip_src, source_ip, INET_ADDRSTRLEN);
-        if (source_ip == NULL){
-            fprintf(stderr, "Error: Converting source_ip to string.");
-            return;    
-        }
-        inet_ntop(AF_INET, &ip->ip_dst, dest_ip, INET_ADDRSTRLEN);
-        if (dest_ip == NULL){
-            fprintf(stderr, "Error: Converting dest_ip to string.");
-            return;    
         }
 
         /*ntohl converts 32-bit unsigned integer from network byte order to host byte order*/
@@ -413,21 +473,6 @@ void got_packet_offline(unsigned char *args, const struct pcap_pkthdr *header, c
         udp = (struct udphdr*)(packet + SIZE_ETHERNET + size_ip);
         size_udp = 8; // udp header is always 8 bytes 
         
-        char source_ip[INET_ADDRSTRLEN];
-        char dest_ip[INET_ADDRSTRLEN];
-
-        // inet_ntop - convert IPv4 and IPv6 addresses from binary to text form
-        inet_ntop(AF_INET, &ip->ip_src, source_ip, INET_ADDRSTRLEN);
-        if (source_ip == NULL){
-            fprintf(stderr, "Error: Converting source_ip to string.");
-            return;    
-        }
-        inet_ntop(AF_INET, &ip->ip_dst, dest_ip, INET_ADDRSTRLEN);
-        if (dest_ip == NULL){
-            fprintf(stderr, "Error: Converting dest_ip to string.");
-            return;    
-        }
-
         payload = (unsigned char *)(packet + SIZE_ETHERNET + size_ip + size_udp);
         
         printf("Protocol : UDP\n");
@@ -452,11 +497,13 @@ void signalHandler(int signalNumber) {
     if (signalNumber == SIGINT) {
         printf("Keyboard interrupt detected. Exiting...\n");
         show_statistics();
+        free(tcp_network_flows);
+        free(udp_network_flows);
         exit(0);
     }
 }
 
 void show_statistics(){
     printf("\n   --- Showing Statistics ---\n");
-    printf("Total number of packets received: %u\nTotal number of TCP packets received: %u\nTotal number of UDP packets received: %u\nTotal bytes of TCP packets received: %u bytes\nTotal bytes of UDP packets received: %u bytes\n", total_number_of_packets, tcp_packets, udp_packets, tcp_packets_bytes, udp_packets_bytes);
+    printf("Total number of Network Flows captured: %d\nTotal number of TCP Network Flows captured: %d\nNumber of UDP network flows captured: %d\nTotal number of packets received: %u\nTotal number of TCP packets received: %u\nTotal number of UDP packets received: %u\nTotal bytes of TCP packets received: %u bytes\nTotal bytes of UDP packets received: %u bytes\n", tcp_network_flows_packets+udp_network_flows_packets, tcp_network_flows_packets, udp_network_flows_packets, total_number_of_packets, tcp_packets, udp_packets, tcp_packets_bytes, udp_packets_bytes);
 }
