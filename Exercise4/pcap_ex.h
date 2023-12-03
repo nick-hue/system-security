@@ -76,8 +76,10 @@ struct sniff_tcp {
 	unsigned short th_urp;		/* urgent pointer */
 };
 
-/* packet handler callback function */
-void got_packet(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet);
+/* packet handler callback function for online mode*/
+void got_packet_online(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet);
+/* packet handler callback function for offline mode*/
+void got_packet_offline(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet);
 /* shows statistics */
 void show_statistics();
 
