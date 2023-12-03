@@ -1,5 +1,8 @@
 #include "pcap_ex.h"
 
+unsigned int total_number_of_NetworkFLows = 0;   /* Total number of total_number_of_NetworkFLows received */
+unsigned int tcpNetworkFLows_packets = 0;               /* Total number of TCP packets received. */
+unsigned int udpNetworkFLows_packets = 0;               /* Total number of UDP packets received. */
 unsigned int total_number_of_packets = 0;   /* Total number of packets received */
 unsigned int tcp_packets = 0;               /* Total number of TCP packets received. */
 unsigned int udp_packets = 0;               /* Total number of UDP packets received. */
