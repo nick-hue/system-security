@@ -1,24 +1,17 @@
 #include "pcap_ex.h"
 
-unsigned int tcp_network_flows_packets = 0;               /* Total number of TCP packets received. */
-unsigned int udp_network_flows_packets = 0;               /* Total number of UDP packets received. */
+// unsigned int tcp_network_flows_packets = 0;               /* Total number of TCP packets received. */
+// unsigned int udp_network_flows_packets = 0;               /* Total number of UDP packets received. */
 unsigned int total_number_of_packets = 0;                 /* Total number of packets received */
 unsigned int tcp_packets = 0;                             /* Total number of TCP packets received. */
 unsigned int udp_packets = 0;                             /* Total number of UDP packets received. */
 unsigned int tcp_packets_bytes = 0;                       /* Total bytes of TCP packets received. */
 unsigned int udp_packets_bytes = 0;                       /* Total bytes of UDP packets received. */
-//struct NetworkFlow tcp_network_flows[MAX_PACKETS];
-//struct NetworkFlow udp_network_flows[MAX_PACKETS];
+// struct NetworkFlow tcp_network_flows[MAX_PACKETS];
+// struct NetworkFlow udp_network_flows[MAX_PACKETS];
 struct PacketInfo tcp_transmitted_packets[MAX_PACKETS];
 
-struct NetworkFlow* tcp_network_flows;
-struct NetworkFlow* udp_network_flows;
-
 int num_transmitted_packets = 0;
-
-/*unsigned int hashFlow(struct NetworkFLow *network_flow){
-    return()
-}*/
 
 int main(int argc, char *argv[]) {
     int opt;
@@ -34,10 +27,6 @@ int main(int argc, char *argv[]) {
     }
     fclose(f);
     
-    tcp_network_flows = (struct NetworkFlow *)malloc(sizeof(struct NetworkFlow));
-    tcp_network_flows_packets++;
-    udp_network_flows = (struct NetworkFlow *)malloc(sizeof(struct NetworkFlow));
-    udp_network_flows_packets++;
 
     while ((opt = getopt(argc, argv, "i:r:f:h")) != -1) {
         switch (opt) {
@@ -254,33 +243,33 @@ void got_packet_online(unsigned char *args, const struct pcap_pkthdr *header, co
         
         // if list of network flows is empty insert it
 
-        if (tcp_network_flows_packets == 0){
-            tcp_network_flows[tcp_network_flows_packets].dport = tcp->th_dport; 
-            tcp_network_flows[tcp_network_flows_packets].sport = tcp->th_sport; 
-            tcp_network_flows[tcp_network_flows_packets].ip_dst = ip->ip_dst;  
-            tcp_network_flows[tcp_network_flows_packets].ip_p = ip->ip_p; 
-            tcp_network_flows[tcp_network_flows_packets].ip_src = ip->ip_src;
-            tcp_network_flows_packets++;
-        } else {
-            for(int i=0; i<tcp_network_flows_packets; i++){
-                if(!(tcp_network_flows[i].dport == tcp->th_dport && tcp_network_flows[i].sport == tcp->th_sport && tcp_network_flows[i].ip_dst.s_addr == ip->ip_dst.s_addr &&  tcp_network_flows[i].ip_p == ip->ip_p && tcp_network_flows[i].ip_src.s_addr == ip->ip_src.s_addr)) {
-                        struct NetworkFlow* temp = (struct NetworkFlow *)realloc(tcp_network_flows, tcp_network_flows_packets*sizeof(struct NetworkFlow));
-                        if (!temp) {
-                            perror("error with realloc");
-                            free(tcp_network_flows);
-                            exit(1);
-                        }
-                        tcp_network_flows = temp;
-                        int index = tcp_network_flows_packets-1;
-                        tcp_network_flows[index].dport = tcp->th_dport; 
-                        tcp_network_flows[index].sport = tcp->th_sport; 
-                        tcp_network_flows[index].ip_dst = ip->ip_dst;  
-                        tcp_network_flows[index].ip_p = ip->ip_p; 
-                        tcp_network_flows[index].ip_src = ip->ip_src;
-                        tcp_network_flows_packets++;
-                }
-            }
-        }
+        // if (tcp_network_flows_packets == 0){
+        //     tcp_network_flows[tcp_network_flows_packets].dport = tcp->th_dport; 
+        //     tcp_network_flows[tcp_network_flows_packets].sport = tcp->th_sport; 
+        //     tcp_network_flows[tcp_network_flows_packets].ip_dst = ip->ip_dst;  
+        //     tcp_network_flows[tcp_network_flows_packets].ip_p = ip->ip_p; 
+        //     tcp_network_flows[tcp_network_flows_packets].ip_src = ip->ip_src;
+        //     tcp_network_flows_packets++;
+        // } else {
+        //     for(int i=0; i<tcp_network_flows_packets; i++){
+        //         if(!(tcp_network_flows[i].dport == tcp->th_dport && tcp_network_flows[i].sport == tcp->th_sport && tcp_network_flows[i].ip_dst.s_addr == ip->ip_dst.s_addr &&  tcp_network_flows[i].ip_p == ip->ip_p && tcp_network_flows[i].ip_src.s_addr == ip->ip_src.s_addr)) {
+        //                 /*struct NetworkFlow* temp = (struct NetworkFlow *)realloc(tcp_network_flows, tcp_network_flows_packets*sizeof(struct NetworkFlow));
+        //                 if (!temp) {
+        //                     perror("error with realloc");
+        //                     free(tcp_network_flows);
+        //                     exit(1);
+        //                 }*/
+        //                 //tcp_network_flows = temp;
+        //                 //int index = tcp_network_flows_packets-1;
+        //                 tcp_network_flows[tcp_network_flows_packets].dport = tcp->th_dport; 
+        //                 tcp_network_flows[tcp_network_flows_packets].sport = tcp->th_sport; 
+        //                 tcp_network_flows[tcp_network_flows_packets].ip_dst = ip->ip_dst;  
+        //                 tcp_network_flows[tcp_network_flows_packets].ip_p = ip->ip_p; 
+        //                 tcp_network_flows[tcp_network_flows_packets].ip_src = ip->ip_src;
+        //                 tcp_network_flows_packets++;
+        //         }
+        //     }
+        // }
         //Checking if network flow already exists
                 
         FILE* f = fopen("log.txt", "a");
@@ -317,7 +306,7 @@ void got_packet_online(unsigned char *args, const struct pcap_pkthdr *header, co
         payload = (unsigned char *)(packet + SIZE_ETHERNET + size_ip + size_udp);
         
         // if list of network flows is empty insert it
-       if (udp_network_flows_packets == 0){
+      /*/ if (udp_network_flows_packets == 0){
             udp_network_flows[udp_network_flows_packets].dport = udp->uh_dport; 
             udp_network_flows[udp_network_flows_packets].sport = udp->uh_sport; 
             udp_network_flows[udp_network_flows_packets].ip_dst = ip->ip_dst;  
@@ -327,15 +316,6 @@ void got_packet_online(unsigned char *args, const struct pcap_pkthdr *header, co
         } else {
             for(int i=0; i<udp_network_flows_packets; i++){
                 if(!(udp_network_flows[i].dport == udp->uh_dport && udp_network_flows[i].sport == udp->uh_sport && udp_network_flows[i].ip_dst.s_addr == ip->ip_dst.s_addr &&  udp_network_flows[i].ip_p == ip->ip_p && udp_network_flows[i].ip_src.s_addr == ip->ip_src.s_addr)) {
-                    struct NetworkFlow* temp = (struct NetworkFlow *)realloc(udp_network_flows, udp_network_flows_packets*sizeof(struct NetworkFlow));
-                    if (!temp) {
-                        perror("error with realloc");
-                        free(tcp_network_flows);
-                        exit(1);
-                    }
-                    udp_network_flows = temp;
-                    int index = udp_network_flows_packets-1;
-
                     udp_network_flows[udp_network_flows_packets].dport = udp->uh_dport; 
                     udp_network_flows[udp_network_flows_packets].sport = udp->uh_sport; 
                     udp_network_flows[udp_network_flows_packets].ip_dst = ip->ip_dst;  
@@ -345,7 +325,7 @@ void got_packet_online(unsigned char *args, const struct pcap_pkthdr *header, co
                 }
             }
         }
-        
+        */
         FILE *file = fopen("log.txt", "a");
         if (file == NULL) {
             perror("Error opening file");
@@ -495,15 +475,13 @@ void got_packet_offline(unsigned char *args, const struct pcap_pkthdr *header, c
 
 void signalHandler(int signalNumber) {
     if (signalNumber == SIGINT) {
-        printf("Keyboard interrupt detected. Exiting...\n");
+        printf("\nKeyboard interrupt detected. Exiting...\n");
         show_statistics();
-        free(tcp_network_flows);
-        free(udp_network_flows);
         exit(0);
     }
 }
 
 void show_statistics(){
     printf("\n   --- Showing Statistics ---\n");
-    printf("Total number of Network Flows captured: %d\nTotal number of TCP Network Flows captured: %d\nNumber of UDP network flows captured: %d\nTotal number of packets received: %u\nTotal number of TCP packets received: %u\nTotal number of UDP packets received: %u\nTotal bytes of TCP packets received: %u bytes\nTotal bytes of UDP packets received: %u bytes\n", tcp_network_flows_packets+udp_network_flows_packets, tcp_network_flows_packets, udp_network_flows_packets, total_number_of_packets, tcp_packets, udp_packets, tcp_packets_bytes, udp_packets_bytes);
+    printf("Total number of Network Flows captured: %d\nTotal number of TCP Network Flows captured: %d\nNumber of UDP network flows captured: %d\nTotal number of packets received: %u\nTotal number of TCP packets received: %u\nTotal number of UDP packets received: %u\nTotal bytes of TCP packets received: %u bytes\nTotal bytes of UDP packets received: %u bytes\n", 0, 0, 0, total_number_of_packets, tcp_packets, udp_packets, tcp_packets_bytes, udp_packets_bytes);
 }
