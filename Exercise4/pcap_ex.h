@@ -2,6 +2,7 @@
 #define __PCAP_EX_H__
 
 #include <stdio.h>
+#include <stdbool.h>
 #include <pcap.h>
 #include <unistd.h>
 #include <getopt.h>
@@ -17,6 +18,7 @@
 
 /* ethernet headers are always exactly 14 bytes */
 #define SIZE_ETHERNET 14
+#define MAX_PACKETS 1000
 
 typedef enum {
     INTERFACE,
@@ -57,8 +59,8 @@ typedef unsigned int tcp_seq;
 struct sniff_tcp {
 	unsigned short th_sport;	/* source port */
 	unsigned short th_dport;	/* destination port */
-	tcp_seq th_seq;				/* sequence number */
-	tcp_seq th_ack;				/* acknowledgement number */
+	tcp_seq th_seq;		/* sequence number */
+	tcp_seq th_ack;		/* acknowledgement number */
 	unsigned char th_offx2;		/* data offset, rsvd */
 #define TH_OFF(th)	(((th)->th_offx2 & 0xf0) >> 4)
 	unsigned char th_flags;
@@ -74,6 +76,10 @@ struct sniff_tcp {
 	unsigned short th_win;		/* window */
 	unsigned short th_sum;		/* checksum */
 	unsigned short th_urp;		/* urgent pointer */
+};
+
+struct PacketInfo {
+	tcp_seq seq;		/* sequence number */
 };
 
 /* packet handler callback function for online mode*/

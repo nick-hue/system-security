@@ -5,17 +5,27 @@ unsigned int tcp_packets = 0;               /* Total number of TCP packets recei
 unsigned int udp_packets = 0;               /* Total number of UDP packets received. */
 unsigned int tcp_packets_bytes = 0;         /* Total bytes of TCP packets received. */
 unsigned int udp_packets_bytes = 0;         /* Total bytes of UDP packets received. */
+struct PacketInfo tcp_transmitted_packets[MAX_PACKETS];
+int num_transmitted_packets = 0;
 
 int main(int argc, char *argv[]) {
     int opt;
-    char *input = NULL, *pcap_name = NULL, *filter = NULL;
+    char *dev = NULL, *pcap_name = NULL, *filter = NULL;
     Mode mode;
 
+    FILE* f = fopen("log.txt", "w");
+    if (f == NULL) {
+        perror("Error opening file");
+        return -1;
+    }
+
+    fclose(f);
+    
     while ((opt = getopt(argc, argv, "i:r:f:h")) != -1) {
         switch (opt) {
             case 'i':
                 mode = INTERFACE;
-                input = optarg;
+                dev = optarg;
                 break;
             case 'r':
                 mode = PACKET;
@@ -43,21 +53,29 @@ int main(int argc, char *argv[]) {
     pcap_t *handle;			            /* Session handle */
     char errbuf[PCAP_ERRBUF_SIZE];	    /* Error string */
     bpf_u_int32 net;                    /* The IP of our sniffing device */
+    struct bpf_program fp;		        /* The compiled filter */
+
+    /*for online mode*/
+    int packet_count_limit = -1;
+    int timeout_limit = 10000;          /* 10 seconds in milliseconds */
+    bpf_u_int32 mask;                   /* The netmask of our sniffinf device */
+
+    /*for offline mode*/
+    struct pcap_pkthdr header;	        /* The header that pcap gives us */
+    const unsigned char *packet;		/* The actual packet */
+
 
     switch(mode){
         case INTERFACE:
             // online mode
-            char *dev;                              /* Name of device (e.g. eth0, xl1, wlan0) */
-            int packet_count_limit = 10;
-            int timeout_limit = 1000;              /* 10 seconds in milliseconds */
-            bpf_u_int32 mask;                       /* The netmask of our sniffinf device */
-            struct bpf_program cfilter;		        /* The compiled filter */
-
+            //My device interface name: wlp2s0
             /*Print the device*/
-            dev = input;
-            printf("Device: %s\n", dev);
+            if (dev == NULL) {
+                fprintf(stderr, "Device is not given \n");
+                return 2;
+            }
 
-            /* Aquire on of the device's IPv4 network number and the subnet mask */
+            /*Aquire on of the device's IPv4 network number and the subnet mask*/
             if(pcap_lookupnet(dev, &net, &mask, errbuf) == -1){
                 fprintf(stderr, "Can't get netmask for device: %s\n", dev);
                 net = 0;
@@ -75,18 +93,16 @@ int main(int argc, char *argv[]) {
             if (filter){ 
                 printf("filter exists\nfilter : %s\n", filter);
 
-                if (pcap_compile(handle, &cfilter, filter, 0, net) == -1) {
+                if (pcap_compile(handle, &fp, filter, 0, net) == -1) {
                     fprintf(stderr, "Couldn't parse filter %s: %s\n", filter, pcap_geterr(handle));
                     return 1;
                 }
                 
-                if (pcap_setfilter(handle, &cfilter) == -1) {
+                if (pcap_setfilter(handle, &fp) == -1) {
                     fprintf(stderr, "Couldn't install filter %s: %s\n", filter, pcap_geterr(handle));
                     return 1;
                 }
-            } else {
-                printf("filter does not exist\n");
-            }
+            } 
 
             printf("Listening...");
             if (pcap_loop(handle, packet_count_limit, got_packet_online, NULL) < 0) {
@@ -97,12 +113,7 @@ int main(int argc, char *argv[]) {
             pcap_close(handle);
             break;
         case PACKET:
-            // offline mode 
-
-            struct bpf_program fp;		        /* The compiled filter */
-            struct pcap_pkthdr header;	        /* The header that pcap gives us */
-            const unsigned char *packet;		/* The actual packet */
-
+            // offline mode i think
             handle = pcap_open_offline(pcap_name, errbuf);
             if (handle == NULL) {
                 fprintf(stderr, "Couldn't open pcap file %s: %s\n", pcap_name, errbuf);
@@ -122,10 +133,8 @@ int main(int argc, char *argv[]) {
                     fprintf(stderr, "Couldn't install filter %s: %s\n", filter, pcap_geterr(handle));
                     return 1;
                 }
-            } else {
-                printf("filter does not exist\n");
-            }
-
+            } 
+          
             if (pcap_loop(handle, 0, got_packet_offline, NULL) < 0) {
                 fprintf(stderr, "pcap_loop() failed: %s\n", pcap_geterr(handle));
                 return 1;
@@ -146,13 +155,12 @@ int main(int argc, char *argv[]) {
     return 0;
 }
 
-void got_packet_online(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet){
-    printf("\n\n");	
-
-    const struct sniff_ethernet *ethernet;  /* The ethernet header */
+void got_packet_online(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet){	
+    const struct sniff_ethernet *ethernet;  /* The ethernet header *///if not ip skip
     const struct sniff_ip *ip;              /* The IP header */
-    const struct sniff_tcp *tcp;            /* The TCP header */
+    const struct sniff_tcp *tcp;               /* The TCP header */
     const struct udphdr *udp;               /* The UDP header */
+    bool is_retransmission;
 
     const char *payload;                    /* Packet payload */
     
@@ -160,12 +168,12 @@ void got_packet_online(unsigned char *args, const struct pcap_pkthdr *header, co
     unsigned int size_tcp;
     unsigned int size_udp;
 
+    total_number_of_packets++;
+
     // ethernet header 
     ethernet = (struct sniff_ethernet*)(packet);
-    if (ntohs(ethernet->ether_type) == ETHERTYPE_IP){
-        printf("IP good...\n");
-    } else {
-        printf("Uknown ether type, skipping...");
+    if (ntohs(ethernet->ether_type) != ETHERTYPE_IP){
+        //printf("Uknown ether type, skipping...");
         return;
     }
 
@@ -174,7 +182,7 @@ void got_packet_online(unsigned char *args, const struct pcap_pkthdr *header, co
     ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
     size_ip = IP_HL(ip)*4;
     if (size_ip < 20) {
-        printf("   * Invalid IP header length: %u bytes\n", size_ip);
+        //printf("   * Invalid IP header length: %u bytes\n", size_ip);
         return;
     }
 
@@ -205,14 +213,36 @@ void got_packet_online(unsigned char *args, const struct pcap_pkthdr *header, co
             return;    
         }
 
+        /*ntohl converts 32-bit unsigned integer from network byte order to host byte order*/
+        tcp_seq seq_number = ntohl(tcp->th_seq);
+        tcp_seq ack_number = ntohl(tcp->th_ack);
+
+        // Check for retransmission
+        is_retransmission = false;
+        for(int i=0; i< num_transmitted_packets-1; i++){
+            if(tcp_transmitted_packets[i].seq == seq_number && ack_number < tcp_transmitted_packets[i+1].seq) {
+                is_retransmission = true;
+                break;
+            }
+        }
+
+        /*Record transmitted packet*/
+        if(!is_retransmission && num_transmitted_packets < MAX_PACKETS){
+            tcp_transmitted_packets[num_transmitted_packets].seq = seq_number;
+            num_transmitted_packets++;
+        }
+
         payload = (unsigned char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
         
         FILE* f = fopen("log.txt", "a");
         if (f == NULL) {
             perror("Error opening file");
-            return;
+            return ;
         }
 
+        if(is_retransmission){
+            fprintf(f, "Retransmitted\n");
+        }
         fprintf(f, "Protocol : TCP\n");
         fprintf(f, "TCP header length : %u\n", size_tcp);
         fprintf(f, "TCP payload length: %u\n", header->len - size_tcp - size_ip - SIZE_ETHERNET);
@@ -287,6 +317,7 @@ void got_packet_offline(unsigned char *args, const struct pcap_pkthdr *header, c
     const struct sniff_ip *ip;              /* The IP header */
     const struct sniff_tcp *tcp;            /* The TCP header */
     const struct udphdr *udp;               /* The UDP header */
+    bool is_retransmission;
 
     const char *payload;                    /* Packet payload */
     
@@ -296,19 +327,16 @@ void got_packet_offline(unsigned char *args, const struct pcap_pkthdr *header, c
 
     // ethernet header 
     ethernet = (struct sniff_ethernet*)(packet);
-    if (ntohs(ethernet->ether_type) == ETHERTYPE_IP){
-        printf("IP good...\n");
-    } else {
-        printf("Uknown ether type, skipping...");
+    if (ntohs(ethernet->ether_type) != ETHERTYPE_IP){
+        //printf("Uknown ether type, skipping...");
         return;
     }
 
-    total_number_of_packets++;
     // ip header 
     ip = (struct sniff_ip*)(packet + SIZE_ETHERNET);
     size_ip = IP_HL(ip)*4;
     if (size_ip < 20) {
-        printf("   * Invalid IP header length: %u bytes\n", size_ip);
+       // printf("   * Invalid IP header length: %u bytes\n", size_ip);
         return;
     }
 
@@ -317,7 +345,7 @@ void got_packet_offline(unsigned char *args, const struct pcap_pkthdr *header, c
         tcp_packets++;
 
         // tcp header
-        tcp = (struct sniff_tcp*)(packet + SIZE_ETHERNET + size_ip);
+        tcp = (struct sniff_tcp *)(packet + SIZE_ETHERNET + size_ip);
         size_tcp = TH_OFF(tcp)*4;
         if (size_tcp < 20) {
             printf("   * Invalid TCP header length: %u bytes\n", size_tcp);
@@ -328,19 +356,43 @@ void got_packet_offline(unsigned char *args, const struct pcap_pkthdr *header, c
         char dest_ip[INET_ADDRSTRLEN];
 
         // inet_ntop - convert IPv4 and IPv6 addresses from binary to text form
-        inet_ntop(AF_INET, &ip->ip_src, source_ip, sizeof(source_ip));
+        inet_ntop(AF_INET, &ip->ip_src, source_ip, INET_ADDRSTRLEN);
         if (source_ip == NULL){
             fprintf(stderr, "Error: Converting source_ip to string.");
             return;    
         }
-        inet_ntop(AF_INET, &ip->ip_dst, dest_ip, sizeof(dest_ip));
+        inet_ntop(AF_INET, &ip->ip_dst, dest_ip, INET_ADDRSTRLEN);
         if (dest_ip == NULL){
             fprintf(stderr, "Error: Converting dest_ip to string.");
             return;    
         }
 
+        /*ntohl converts 32-bit unsigned integer from network byte order to host byte order*/
+        tcp_seq seq_number = ntohl(tcp->th_seq);
+        tcp_seq ack_number = ntohl(tcp->th_ack);
+
+        // Check for retransmission
+        is_retransmission = false;
+        for(int i=0; i< num_transmitted_packets-1; i++){
+            if(tcp_transmitted_packets[i].seq == seq_number && ack_number < tcp_transmitted_packets[i+1].seq) {
+                is_retransmission = true;
+                break;
+            }
+        }
+
+        /*Record transmitted packet*/
+        if(!is_retransmission && num_transmitted_packets < MAX_PACKETS){
+            tcp_transmitted_packets[num_transmitted_packets].seq = seq_number;
+            num_transmitted_packets++;
+        }
+
+
+
         payload = (unsigned char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
         
+        if(is_retransmission){
+            printf("Retransmitted\n");
+        }
         printf("Protocol : TCP\n");
         printf("TCP header length : %u\n", size_tcp);
         printf("TCP payload length: %u\n", header->len-size_tcp-size_ip-SIZE_ETHERNET);
@@ -365,12 +417,12 @@ void got_packet_offline(unsigned char *args, const struct pcap_pkthdr *header, c
         char dest_ip[INET_ADDRSTRLEN];
 
         // inet_ntop - convert IPv4 and IPv6 addresses from binary to text form
-        inet_ntop(AF_INET, &ip->ip_src, source_ip, sizeof(source_ip));
+        inet_ntop(AF_INET, &ip->ip_src, source_ip, INET_ADDRSTRLEN);
         if (source_ip == NULL){
             fprintf(stderr, "Error: Converting source_ip to string.");
             return;    
         }
-        inet_ntop(AF_INET, &ip->ip_dst, dest_ip, sizeof(dest_ip));
+        inet_ntop(AF_INET, &ip->ip_dst, dest_ip, INET_ADDRSTRLEN);
         if (dest_ip == NULL){
             fprintf(stderr, "Error: Converting dest_ip to string.");
             return;    
