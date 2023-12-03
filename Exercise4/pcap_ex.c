@@ -309,8 +309,7 @@ void got_packet_online(unsigned char *args, const struct pcap_pkthdr *header, co
         printf("Not a TCP or UDP packet. Skipping...\n\n");
         return;
     }
-
-    
+        
 }
 
 void got_packet_offline(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet){
@@ -389,8 +388,6 @@ void got_packet_offline(unsigned char *args, const struct pcap_pkthdr *header, c
             num_transmitted_packets++;
         }
 
-
-
         payload = (unsigned char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
         
         if(is_retransmission){
@@ -448,6 +445,14 @@ void got_packet_offline(unsigned char *args, const struct pcap_pkthdr *header, c
     } else {
         printf("Not a TCP or UDP packet. Skipping...\n\n");
         return;
+    }
+}
+
+void signalHandler(int signalNumber) {
+    if (signalNumber == SIGINT) {
+        printf("Keyboard interrupt detected. Exiting...\n");
+        show_statistics();
+        exit(0);
     }
 }
 

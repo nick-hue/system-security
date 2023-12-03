@@ -15,6 +15,7 @@
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
 #include <arpa/inet.h>
+#include <signal.h>
 
 /* ethernet headers are always exactly 14 bytes */
 #define SIZE_ETHERNET 14
@@ -88,5 +89,7 @@ void got_packet_online(unsigned char *args, const struct pcap_pkthdr *header, co
 void got_packet_offline(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet);
 /* shows statistics */
 void show_statistics();
+/* handle keyboard interrup*/
+void signalHandler(int signalNumber);
 
 #endif
