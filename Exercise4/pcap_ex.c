@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
     int opt;
     char *dev = NULL, *pcap_name = NULL, *filter = NULL;
     Mode mode;
-
+    signal(SIGINT, signalHandler);
     FILE* f = fopen("log.txt", "w");
     if (f == NULL) {
         perror("Error opening file");
@@ -309,7 +309,7 @@ void got_packet_online(unsigned char *args, const struct pcap_pkthdr *header, co
         printf("Not a TCP or UDP packet. Skipping...\n\n");
         return;
     }
-        
+
 }
 
 void got_packet_offline(unsigned char *args, const struct pcap_pkthdr *header, const unsigned char *packet){
