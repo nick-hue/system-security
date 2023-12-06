@@ -11,50 +11,45 @@ function adBlock() {
     fi
     if [ "$1" = "-domains"  ]; then
         # Configure adblock rules based on the domain names of $domainNames file.
-        # Write your code here...
+        echo "Configuring adblock rules for Domain Names."
         
         true
             
     elif [ "$1" = "-ips"  ]; then
         # Configure adblock rules based on the IP addresses of $IPAddresses file.
-        # Write your code here...
-        # ...
-        # ...
+        echo "Configuring adblock rules for IP addresses."
+        while read -r address
+        do  
+            if [[ "${#address}" -lt 16 ]]; then
+                #echo "ipv4" 
+                sudo iptables -A INPUT -s "$address" -j DROP
+            else
+                #echo "ipv6"
+                sudo ip6tables -A INPUT -s "$address" -j DROP
+            fi
+        done < $IPAddresses
         true
         
     elif [ "$1" = "-save"  ]; then
         # Save rules to $adblockRules file.
-        # Write your code here...
-        # ...
-        # ...
+        sudo iptables-save > adblockRules
         true
         
     elif [ "$1" = "-load"  ]; then
         # Load rules from $adblockRules file.
-        # Write your code here...
-        # ...
-        # ...
+        sudo iptables-restore < adblockRules
         true
-
         
     elif [ "$1" = "-reset"  ]; then
         # Reset rules to default settings (i.e. accept all).
         echo "Reseting rules to default settings (i.e. accept all)"
-        truncate -s 0 adblockRules
+        sudo iptables -F
         true
 
-        
     elif [ "$1" = "-list"  ]; then
         # List current rules.
-        if [ -s adblockRules ]; then
-                # The file is not-empty.
-                echo "Listing current rules."
-                cat adblockRules
-        else
-                # The file is empty.
-                echo "No rules applied."
-        fi
-
+        sudo iptables -L -v -n
+        #sudo ip6tables -L -v -n
         true
         
     elif [ "$1" = "-help"  ]; then
