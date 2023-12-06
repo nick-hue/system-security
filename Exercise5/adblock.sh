@@ -12,8 +12,7 @@ function adBlock() {
     if [ "$1" = "-domains"  ]; then
         # Configure adblock rules based on the domain names of $domainNames file.
         # Write your code here...
-        # ...
-        # ...
+        
         true
             
     elif [ "$1" = "-ips"  ]; then
@@ -40,17 +39,22 @@ function adBlock() {
         
     elif [ "$1" = "-reset"  ]; then
         # Reset rules to default settings (i.e. accept all).
-        # Write your code here...
-        # ...
-        # ...
+        echo "Reseting rules to default settings (i.e. accept all)"
+        truncate -s 0 adblockRules
         true
 
         
     elif [ "$1" = "-list"  ]; then
         # List current rules.
-        # Write your code here...
-        # ...
-        # ...
+        if [ -s adblockRules ]; then
+                # The file is not-empty.
+                echo "Listing current rules."
+                cat adblockRules
+        else
+                # The file is empty.
+                echo "No rules applied."
+        fi
+
         true
         
     elif [ "$1" = "-help"  ]; then
