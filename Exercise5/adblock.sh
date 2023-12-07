@@ -12,7 +12,18 @@ function adBlock() {
     if [ "$1" = "-domains"  ]; then
         # Configure adblock rules based on the domain names of $domainNames file.
         echo "Configuring adblock rules for Domain Names."
-        
+        truncate -s 0 $IPAddresses # clearing IPaddresses file from previous runs
+
+        while read -r domain; do 
+            host "$domain" | awk '/has address/ {print $NF}' | while read -r address; do
+            
+                echo $address >> $IPAddresses
+                sudo iptables -A INPUT -s "$address" -j REJECT
+                sudo iptables -A OUTPUT -s "$address" -j REJECT 
+            
+            done
+        done < $domainNames
+
         true
             
     elif [ "$1" = "-ips"  ]; then
@@ -20,24 +31,23 @@ function adBlock() {
         echo "Configuring adblock rules for IP addresses."
         while read -r address
         do  
-            if [[ "${#address}" -lt 16 ]]; then
-                #echo "ipv4" 
-                sudo iptables -A INPUT -s "$address" -j DROP
-            else
-                #echo "ipv6"
-                sudo ip6tables -A INPUT -s "$address" -j DROP
-            fi
+            sudo iptables -A INPUT -s "$address" -j REJECT
+            sudo iptables -A OUTPUT -s "$address" -j REJECT 
+
         done < $IPAddresses
         true
         
     elif [ "$1" = "-save"  ]; then
         # Save rules to $adblockRules file.
-        sudo iptables-save > adblockRules
+        truncate -s 0 $adblockRules # clearing adblockRules file from previous runs before saving to it
+        sudo iptables-save > $adblockRules
+        echo "Rules saved to $adblockRules."
         true
         
     elif [ "$1" = "-load"  ]; then
         # Load rules from $adblockRules file.
-        sudo iptables-restore < adblockRules
+        sudo iptables-restore < $adblockRules
+        echo "Rules loaded from $adblockRules."
         true
         
     elif [ "$1" = "-reset"  ]; then
@@ -49,7 +59,6 @@ function adBlock() {
     elif [ "$1" = "-list"  ]; then
         # List current rules.
         sudo iptables -L -v -n
-        #sudo ip6tables -L -v -n
         true
         
     elif [ "$1" = "-help"  ]; then
