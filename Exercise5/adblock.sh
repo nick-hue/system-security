@@ -15,15 +15,20 @@ function adBlock() {
         truncate -s 0 $IPAddresses # clearing IPaddresses file from previous runs
 
         while read -r domain; do 
-            host "$domain" | awk '/has address/ {print $NF}' | while read -r address; do
+            host "$domain" | awk '/has (IPv6 )?address/ {print $NF}' | while read -r address; do
             
-                echo $address >> $IPAddresses
-                sudo iptables -A INPUT -s "$address" -j REJECT
-                sudo iptables -A OUTPUT -s "$address" -j REJECT 
-            
+                echo $address >> $IPAddresses            
+                # Check if the address contains a colon, indicating it's IPv6
+                if [[ $address == *:* ]]; then
+                    sudo ip6tables -A INPUT -s "$address" -j REJECT
+                    sudo ip6tables -A OUTPUT -s "$address" -j REJECT
+                else
+                    sudo iptables -A INPUT -s "$address" -j REJECT
+                    sudo iptables -A OUTPUT -s "$address" -j REJECT 
+                fi
+
             done
         done < $domainNames
-
         true
             
     elif [ "$1" = "-ips"  ]; then
@@ -31,8 +36,13 @@ function adBlock() {
         echo "Configuring adblock rules for IP addresses."
         while read -r address
         do  
-            sudo iptables -A INPUT -s "$address" -j REJECT
-            sudo iptables -A OUTPUT -s "$address" -j REJECT 
+            if [[ "$address" == *:* ]]; then
+                sudo ip6tables -A INPUT -s "$address" -j REJECT
+                sudo ip6tables -A OUTPUT -s "$address" -j REJECT
+            else
+                sudo iptables -A INPUT -s "$address" -j REJECT
+                sudo iptables -A OUTPUT -s "$address" -j REJECT 
+            fi 
 
         done < $IPAddresses
         true
@@ -41,12 +51,14 @@ function adBlock() {
         # Save rules to $adblockRules file.
         truncate -s 0 $adblockRules # clearing adblockRules file from previous runs before saving to it
         sudo iptables-save > $adblockRules
+        sudo ip6tables-save > $adblockRules
         echo "Rules saved to $adblockRules."
         true
         
     elif [ "$1" = "-load"  ]; then
         # Load rules from $adblockRules file.
         sudo iptables-restore < $adblockRules
+        sudo ip6tables-restore < $adblockRules
         echo "Rules loaded from $adblockRules."
         true
         
@@ -54,11 +66,15 @@ function adBlock() {
         # Reset rules to default settings (i.e. accept all).
         echo "Reseting rules to default settings (i.e. accept all)"
         sudo iptables -F
+        sudo ip6tables -F
         true
 
     elif [ "$1" = "-list"  ]; then
         # List current rules.
+        echo "--- ipv4 rules: "
         sudo iptables -L -v -n
+        echo "--- ipv6 rules: "
+        sudo ip6tables -L -v -n
         true
         
     elif [ "$1" = "-help"  ]; then
