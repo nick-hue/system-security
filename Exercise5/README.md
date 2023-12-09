@@ -27,3 +27,10 @@ Options:
 
 7. -help
 - Displays help message.
+
+Questions
+1. After configuring the adblock rules, test your script by visiting your favorite
+websites without any other adblocking mechanism (e.g., adblock browser
+extensions). Can you see ads? Do they load? Some ads persist, why?
+
+Most ads are not visible on most websites because they are got rejected. Although, some ads persist because some websites employ dynamic loading techniques to fetch ads after the initial page load. Also, some websites often implement anti-adblock measures to detect and counteract adblockers.
