@@ -3,6 +3,7 @@
 domainNames="domainNames.txt"
 IPAddresses="IPAddresses.txt"
 adblockRules="adblockRules"
+adblockRulesIPv6="adblockRulesIPv6"
 
 function adBlock() {
     if [ "$EUID" -ne 0 ];then
@@ -51,15 +52,15 @@ function adBlock() {
         # Save rules to $adblockRules file.
         truncate -s 0 $adblockRules # clearing adblockRules file from previous runs before saving to it
         sudo iptables-save > $adblockRules
-        sudo ip6tables-save > $adblockRules
-        echo "Rules saved to $adblockRules."
+        sudo ip6tables-save > $adblockRulesIPv6
+        echo "Rules saved."
         true
         
     elif [ "$1" = "-load"  ]; then
         # Load rules from $adblockRules file.
         sudo iptables-restore < $adblockRules
-        sudo ip6tables-restore < $adblockRules
-        echo "Rules loaded from $adblockRules."
+        sudo ip6tables-restore < $adblockRulesIPv6
+        echo "Rules loaded."
         true
         
     elif [ "$1" = "-reset"  ]; then

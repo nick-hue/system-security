@@ -8,7 +8,7 @@ $sudo ./adblock.sh <option>
 Options: 
 
 1. -domains
-- In order to get the ip addresses from a certain domain we use a series of commands that writes the current IP address that got parsed from the response, with the help of the awk command, of the DNS query, we got from the host command and then set the rules for the specific IP address with the iptables and the ip6tables command. 
+- In order to get the ip addresses from a certain domain we use a series of commands that writes the current IP address that got parsed from the response (awk) of the DNS query (host) and then set the rules for the specific IP address with the iptables and the ip6tables command. 
 
 2. -ips
 - We set the rules for every IP address generated in the previous feature with the help of the iptables and the ip6tables command.
