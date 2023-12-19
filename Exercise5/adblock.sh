@@ -50,7 +50,6 @@ function adBlock() {
         
     elif [ "$1" = "-save"  ]; then
         # Save rules to $adblockRules file.
-        truncate -s 0 $adblockRules # clearing adblockRules file from previous runs before saving to it
         sudo iptables-save > $adblockRules
         sudo ip6tables-save > $adblockRulesIPv6
         echo "Rules saved."
