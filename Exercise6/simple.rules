@@ -1,1 +1,3 @@
-alert icmp any any -> any any (msg:"ICMP connection attempt"; sid:1000010; rev:1;)
+alert icmp any any -> any any (msg:"ICMP connection attempt."; sid:1000010;)
+alert ip any any -> any any (msg:"'hello' was found."; content:"hello"; sid:1000020;)
+alert ip any ![1:1024] -> any ![1:1024] (msg:"Non root port found."; sid:1000030;)
