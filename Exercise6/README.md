@@ -1,6 +1,6 @@
-ΗΡΥ 413 Assignment: 6
+ΗΡΥ 413 Assignment: 6  
 AM: 2019030190 Nikolaos Angelidis  
-AM: 2019030201 Chrysiis Manoudaki
+AM: 2019030201 Chrysiis Manoudaki  
 
 # In order to run our program: 
 - $sudo snort -c simple.rules -r <pcap_file_name.pcap> -A cmp > output.txt
