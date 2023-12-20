@@ -30,10 +30,10 @@ AM: 2019030201 Chrysiis Manoudaki
 - This rule has the unique Snort ID of 1000040.
 - We scan for tcp packets from any source ip address and port and any destination ip address but for destination port 22 for ssh.
 ### - Rule arguments: 
-- flow:
+#### **flow**
 * to_server: Match on client requests
 * established: Match only on established TCP connections
-- threshold:
+#### **threshold**:
 * type threshold : we have a basic thresh hold that triggers an alert only for a specific amount of occurunces (count = 10) in a specific time frame (seconds = 600 = 10 minutes) 
 * track by_dst : we track (count) the amount of times a specific destination ip address appears.
 
