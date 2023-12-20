@@ -1,3 +1,5 @@
 alert icmp any any -> any any (msg:"ICMP connection attempt."; sid:1000010;)
 alert ip any any -> any any (msg:"'hello' was found."; content:"hello"; sid:1000020;)
 alert ip any ![1:1024] -> any ![1:1024] (msg:"Non root port found."; sid:1000030;)
+alert tcp $EXTERNAL_NET any -> $HOME_NET 22 (msg: "Potential SSH Scan"; flags: S; flowbits: set,ssh.brute.attempt;threshold: type threshold, track by_src, count 5, seconds 120;
+classtype: suspicious-login; sid: 1000040; rev:10;)
