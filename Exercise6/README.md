@@ -3,7 +3,7 @@ AM: 2019030190 Nikolaos Angelidis
 AM: 2019030201 Chrysiis Manoudaki  
 
 # In order to run our program: 
-- $sudo snort -c simple.rules -r <pcap_file_name.pcap> -A cmp > output.txt
+- $sudo snort -c simple.rules -r <pcap_file_name.pcap> -A cmg
 
 - <pcap_file_name.pcap>: test_pcap_5mins.pcap - sshguess.pcap 
 
