@@ -60,7 +60,7 @@ http_inspect.http_stat_code[3]:
 http_inspect.http_stat_msg[2]:
 - - - - - - - - - - - -  - - - - - - - - - - - -  - - - - - - - - -
 4F 4B                                             OK
-- - - - - - - - - - - -  - - - - - - - - - - - -  - - - - - - - - - etc...
+etc...
 
 01/25-20:57:01.137818 [**] [1:10000020:0] "Hello String Found" [**] [Priority: 0] {TCP} 70.37.129.34:5480 -> 10.0.2.15:2553
 
