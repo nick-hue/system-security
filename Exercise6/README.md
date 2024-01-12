@@ -36,7 +36,7 @@ BD BF 07 6C 00 8C BC ED  4D 2D 53 45 41 52 43 48  ...l.... M-SEARCH
 68 65 6D 61 73 2D 75 70  6E 70 2D 6F 72 67 3A 73  hemas-up np-org:s
 65 72 76 69 63 65 3A 57  41 4E 49 50 43 6F 6E 6E  ervice:W ANIPConn
 65 63 74 69 6F 6E 3A 31  0D 0A 0D 0A              ection:1 ....
-- - - - - - - - - - - -  - - - - - - - - - - - -  - - - - - - - - - etc...
+etc...
 
 
 ## 2. Find all packets which contain "hello" string in test_pcap_5mins.pcap
@@ -60,7 +60,7 @@ http_inspect.http_stat_code[3]:
 http_inspect.http_stat_msg[2]:
 - - - - - - - - - - - -  - - - - - - - - - - - -  - - - - - - - - -
 4F 4B                                             OK
-- - - - - - - - - - - -  - - - - - - - - - - - -  - - - - - - - - - etc...
+etc...
 
 01/25-20:57:01.137818 [**] [1:10000020:0] "Hello String Found" [**] [Priority: 0] {TCP} 70.37.129.34:5480 -> 10.0.2.15:2553
 
@@ -77,7 +77,7 @@ http_inspect.http_stat_code[3]:
 http_inspect.http_stat_msg[2]:
 - - - - - - - - - - - -  - - - - - - - - - - - -  - - - - - - - - -
 4F 4B                                             OK
-- - - - - - - - - - - -  - - - - - - - - - - - -  - - - - - - - - - etc...
+etc...
 
 ## 3. Report all traffic between non root ports (port number > 1024)
 ### Rule: alert ip any ![1:1024] <> any ![1:1024] (msg:"Non root port found."; sid:1000030;)
