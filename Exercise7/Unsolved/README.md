@@ -1,5 +1,5 @@
-ΗΡΥ 413 Assignment: 7
-AM: 2019030190 Nikolaos Angelidis  
+ΗΡΥ 413 Assignment: 7  
+AM: 2019030190 Nikolaos Angelidis   
 AM: 2019030201 Chrysiis Manoudaki  
 
 We created a simple script in python to create the input for the buffer in order exploit the readString function to spawn a shell.  
