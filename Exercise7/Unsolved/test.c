@@ -5,7 +5,6 @@ void get_shell(){
     args[0] = "/bin/bash";
     args[1] = NULL;
     execve(args[0], args, NULL);
-    return;
 }
 
 int main(){
