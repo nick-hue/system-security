@@ -11,3 +11,7 @@ Through the GDB debugger we got the machine code for the code snippet that would
 We pipe into the Greeter program our custom made input. If we don't run the exploit as so, the file descriptor of the shell closes before we can actually use the shell, to fix that we use the cat command in the same line to keep it running.
 
 After the above command is executed press enter once and a terminal shell will have spawned and you can run any command as usual (ls, id, whoami, etc).  
+
+#### Bonus 
+echo 0 | sudo tee /proc/sys/kernel/randomize_va_space 
+to disable ASLR
