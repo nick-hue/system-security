@@ -1,15 +1,9 @@
 #include <stdio.h>
+#include <stdlib.h>
 
-void get_shell(){
-    char *args[2];
-    args[0] = "/bin/bash";
-    args[1] = NULL;
-    execve(args[0], args, NULL);
-}
-
-int main(){
-
-    get_shell();
-
-    return 0;
+void main (){
+    char* shell = getenv("SHELL");
+    if (shell) {
+        printf("%x\n", (unsigned int) shell);
+    }
 }

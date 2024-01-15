@@ -15,3 +15,5 @@ After the above command is executed press enter once and a terminal shell will h
 #### Bonus 
 echo 0 | sudo tee /proc/sys/kernel/randomize_va_space 
 to disable ASLR
+
+ system address segment typically starts 12 bytes after the buffer, which translates to buf[24].
