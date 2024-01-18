@@ -2,7 +2,7 @@
 #include <stdlib.h>
 
 void main (){
-    char* shell = getenv("MYSHELL");
+    char* shell = getenv("SHELL");
     if (shell) {
         printf("%x\n", (unsigned int) shell);
     }
