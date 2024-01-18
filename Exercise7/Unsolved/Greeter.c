@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-
-
 unsigned pagesize = 4096;
 #define PAGE_START(P) ((unsigned)(P) & ~(pagesize-1))
 #define PAGE_END(P)   (((unsigned)(P) + pagesize - 1) & ~(pagesize-1))
