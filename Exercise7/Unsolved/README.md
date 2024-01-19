@@ -3,7 +3,10 @@ AM: 2019030190 Nikolaos Angelidis
 AM: 2019030201 Chrysiis Manoudaki  
 
 We created a simple script in python to create the input for the buffer in order exploit the readString function to spawn a shell.  
-The machine code for the spawning of a terminal shell was found online, we also got the memory address that the global variable 'Name', the address is '0x80dacc0' that was printed with the use of the command 'p &Name' after the program was executed in the debugger.
+#### The machine code for the spawning of a terminal shell was found online, we tested that it works as intended with the following commands.
+    gcc test_shell.c -o shell -fno-stack-protector -z execstack -no-pie -m32
+    ./shell
+we also got the memory address that the global variable 'Name', the address is '0x80dacc0' that was printed with the use of the command 'p &Name' after the program was executed in the debugger.
 
 #### In order to run our program: 
     (python3 exploit.py; cat) | ./Greeter  
@@ -33,4 +36,3 @@ Now that we have all the parts for the exploit, we construct a payload with Pyth
 payload = _padding_ + _system_address_ + _exit_address_ + _bin_sh_address_ 
 
 Providing the above payload to the program spawns a terminal shell after "Enter" is pressed once. To verify the correct function of our spawned terminal, you can run any command as usual (ls, id, whoami, etc) as before.
-
